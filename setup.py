@@ -39,7 +39,7 @@ setup(
                       ],
     extras_require={
         "full": [
-            'moseq2-extract @ git+https://github.com/dattalab/moseq2-extract.git@release',
+            'moseq2-extract @ git+https://github.com/llorente-lab/moseq2-extract@release',
             'moseq2-pca @ git+https://github.com/dattalab/moseq2-pca.git@release',
             'moseq2-model @ git+https://github.com/dattalab/moseq2-model.git@release',
             'moseq2-viz @ git+https://github.com/dattalab/moseq2-viz.git@release'
