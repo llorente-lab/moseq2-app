@@ -15,17 +15,30 @@ from moseq2_viz.info.util import transition_entropy
 from moseq2_app.util import merge_labels_with_scalars
 from moseq2_viz.util import get_sorted_index, read_yaml
 from moseq2_viz.model.stat import run_kruskal, run_pairwise_stats
-from moseq2_viz.model.util import (parse_model_results, relabel_by_usage, normalize_usages,
-                                   sort_syllables_by_stat, sort_syllables_by_stat_difference)
+from moseq2_viz.model.util import (
+    parse_model_results,
+    relabel_by_usage,
+    normalize_usages,
+    sort_syllables_by_stat,
+    sort_syllables_by_stat_difference,
+)
 from moseq2_app.stat.widgets import SyllableStatWidgets, TransitionGraphWidgets
 from moseq2_app.stat.view import bokeh_plotting, plot_interactive_transition_graph
-from moseq2_viz.model.trans_graph import (get_trans_graph_groups, get_group_trans_mats,
-                                         convert_transition_matrix_to_ebunch,
-                                         convert_ebunch_to_graph, make_transition_graphs, get_pos)
+from moseq2_viz.model.trans_graph import (
+    get_trans_graph_groups,
+    get_group_trans_mats,
+    convert_transition_matrix_to_ebunch,
+    convert_ebunch_to_graph,
+    make_transition_graphs,
+    get_pos,
+)
+
 
 class InteractiveSyllableStats(SyllableStatWidgets):
 
-    def __init__(self, index_path, model_path, df_path, info_path, max_sylls, load_parquet):
+    def __init__(
+        self, index_path, model_path, df_path, info_path, max_sylls, load_parquet
+    ):
         """
         Initialize the main data inputted into the current context
 
@@ -63,7 +76,7 @@ class InteractiveSyllableStats(SyllableStatWidgets):
 
         # Load all the data
         self.interactive_stat_helper()
-        self.df = self.df[self.df['syllable'] < self.max_sylls]
+        self.df = self.df[self.df["syllable"] < self.max_sylls]
 
         self.session_names = sorted(list(self.df.SessionName.unique()))
         self.subject_names = sorted(list(self.df.SubjectName.unique()))
@@ -77,36 +90,38 @@ class InteractiveSyllableStats(SyllableStatWidgets):
         self.exp_dropdown.value = self.ctrl_dropdown.options[-1]
 
         self.dropdown_mapping = {
-            'usage': 'usage',
-            'duration': 'duration',
-            'distance to center': 'dist_to_center_px',
-            '2d velocity': 'velocity_2d_mm_mean',
-            '3d velocity': 'velocity_3d_mm_mean',
-            'height': 'height_ave_mm_mean',
+            "usage": "usage",
+            "duration": "duration",
+            "distance to center": "dist_to_center_px",
+            "2d velocity": "velocity_2d_mm_mean",
+            "3d velocity": "velocity_3d_mm_mean",
+            "height": "height_ave_mm_mean",
             # 'similarity': 'similarity',
-            'difference': 'difference',
-            'KW & Dunn\'s': 'kw',
-            'Z-Test': 'z_test',
-            'T-Test': 't_test',
-            'Mann-Whitney': 'mw'
+            "difference": "difference",
+            "KW & Dunn's": "kw",
+            "Z-Test": "z_test",
+            "T-Test": "t_test",
+            "Mann-Whitney": "mw",
         }
 
         self.clear_button.on_click(self.clear_on_click)
-        self.grouping_dropdown.observe(self.on_grouping_update, names='value')
+        self.grouping_dropdown.observe(self.on_grouping_update, names="value")
 
         # Plot the Bokeh graph with the currently selected data.
-        self.out = interactive_output(self.interactive_syll_stats_grapher, {
-            'stat': self.stat_dropdown,
-            'sort': self.sorting_dropdown,
-            'groupby': self.grouping_dropdown,
-            'errorbar': self.errorbar_dropdown,
-            'sessions': self.session_sel,
-            'ctrl_group': self.ctrl_dropdown,
-            'exp_group': self.exp_dropdown,
-            'hyp_test': self.hyp_test_dropdown,
-            'thresh': self.thresholding_dropdown
-        })
-
+        self.out = interactive_output(
+            self.interactive_syll_stats_grapher,
+            {
+                "stat": self.stat_dropdown,
+                "sort": self.sorting_dropdown,
+                "groupby": self.grouping_dropdown,
+                "errorbar": self.errorbar_dropdown,
+                "sessions": self.session_sel,
+                "ctrl_group": self.ctrl_dropdown,
+                "exp_group": self.exp_dropdown,
+                "hyp_test": self.hyp_test_dropdown,
+                "thresh": self.thresholding_dropdown,
+            },
+        )
 
     def interactive_stat_helper(self):
         """
@@ -119,26 +134,30 @@ class InteractiveSyllableStats(SyllableStatWidgets):
         max_sylls = len(self.syll_info)
         for k in range(max_sylls):
             # remove group_info
-            syll_info[k].pop('group_info', None)
+            syll_info[k].pop("group_info", None)
 
             # Open videos in encoded urls
             # Implementation from: https://github.com/jupyter/notebook/issues/1024#issuecomment-338664139
-            if exists(syll_info[k]['crowd_movie_path']):
-                video = io.open(syll_info[k]['crowd_movie_path'], 'r+b').read()
+            if exists(syll_info[k]["crowd_movie_path"]):
+                video = io.open(syll_info[k]["crowd_movie_path"], "r+b").read()
                 encoded = base64.b64encode(video)
-                syll_info[k]['crowd_movie_path'] = encoded.decode('ascii')
+                syll_info[k]["crowd_movie_path"] = encoded.decode("ascii")
 
         info_df = pd.DataFrame(syll_info).T.sort_index()
-        info_df['syllable'] = info_df.index
+        info_df["syllable"] = info_df.index
 
         # Load the model and sort labels - also remaps the ar matrices
-        model_data = parse_model_results(self.model_path, sort_labels_by_usage=True, count='usage')
+        model_data = parse_model_results(
+            self.model_path, sort_labels_by_usage=True, count="usage"
+        )
 
         # Read index file
         self.sorted_index = get_sorted_index(self.index_path)
 
-        if not set(model_data['metadata']['uuids']).issubset(set(self.sorted_index['files'])):
-            print('Error: Index file UUIDs do not match model UUIDs.')
+        if not set(model_data["metadata"]["uuids"]).issubset(
+            set(self.sorted_index["files"])
+        ):
+            print("Error: Index file UUIDs do not match model UUIDs.")
 
         # Get max syllables if None is given
         if self.max_sylls is None:
@@ -148,18 +167,20 @@ class InteractiveSyllableStats(SyllableStatWidgets):
         # then the syllable statistics DataFrame will be loaded from the parquet file.
         # otherwise, the DataFrame is computed from scratch
         if self.df_path is not None:
-            print('Loading parquet files')
-            df = pd.read_parquet(self.df_path, engine='pyarrow')
+            print("Loading parquet files")
+            df = pd.read_parquet(self.df_path, engine="pyarrow")
             if len(df.syllable.unique()) < self.max_sylls:
-                print('Requested more syllables than the parquet file holds, recomputing requested dataset.')
+                print(
+                    "Requested more syllables than the parquet file holds, recomputing requested dataset."
+                )
                 df, _ = merge_labels_with_scalars(self.sorted_index, self.model_path)
         else:
-            print('Syllable DataFrame not found. Computing syllable statistics...')
+            print("Syllable DataFrame not found. Computing syllable statistics...")
             df, _ = merge_labels_with_scalars(self.sorted_index, self.model_path)
 
-        self.df = df.merge(info_df, on='syllable')
-        self.df['SubjectName'] = self.df['SubjectName'].astype(str)
-        self.df['SessionName'] = self.df['SessionName'].astype(str)
+        self.df = df.merge(info_df, on="syllable")
+        self.df["SubjectName"] = self.df["SubjectName"].astype(str)
+        self.df["SessionName"] = self.df["SessionName"].astype(str)
         # When syllable usage is 0, the scalars will have nan affecting the interactive stat plot
         # Since syllable usage is 0, the nan in scalars will be filled with 0
         self.df.fillna(0, inplace=True)
@@ -178,9 +199,11 @@ class InteractiveSyllableStats(SyllableStatWidgets):
         sig_sylls (list): list of significant syllables to mark on plotted statistics figure
         """
 
-        if self.dropdown_mapping[hyp_test_name] == 'kw':
+        if self.dropdown_mapping[hyp_test_name] == "kw":
             # run KW and Dunn's Test
-            sig_syll_dict = run_kruskal(self.df, statistic=stat, max_syllable=self.max_sylls)[2]
+            sig_syll_dict = run_kruskal(
+                self.df, statistic=stat, max_syllable=self.max_sylls
+            )[2]
 
             # get corresponding computed significant syllables from pair dict
             if (ctrl_group, exp_group) in sig_syll_dict:
@@ -188,28 +211,60 @@ class InteractiveSyllableStats(SyllableStatWidgets):
             elif (exp_group, ctrl_group) in sig_syll_dict:
                 sig_sylls = sig_syll_dict[(exp_group, ctrl_group)]
             else:
-                raise KeyError('Selected groups are not compatible with KW hypothesis test.')
+                raise KeyError(
+                    "Selected groups are not compatible with KW hypothesis test."
+                )
 
-        elif self.dropdown_mapping[hyp_test_name] == 'z_test':
+        elif self.dropdown_mapping[hyp_test_name] == "z_test":
             # run z-test
-            intersect_sig_sylls = run_pairwise_stats(self.df, ctrl_group, exp_group,
-                                                     test_type='z_test', statistic=stat, max_syllable=self.max_sylls)
-        elif self.dropdown_mapping[hyp_test_name] == 't_test':
+            intersect_sig_sylls = run_pairwise_stats(
+                self.df,
+                ctrl_group,
+                exp_group,
+                test_type="z_test",
+                statistic=stat,
+                max_syllable=self.max_sylls,
+            )
+        elif self.dropdown_mapping[hyp_test_name] == "t_test":
             # run t-test
-            intersect_sig_sylls = run_pairwise_stats(self.df, ctrl_group, exp_group,
-                                                     test_type='t_test', statistic=stat, max_syllable=self.max_sylls)
-        elif self.dropdown_mapping[hyp_test_name] == 'mw':
+            intersect_sig_sylls = run_pairwise_stats(
+                self.df,
+                ctrl_group,
+                exp_group,
+                test_type="t_test",
+                statistic=stat,
+                max_syllable=self.max_sylls,
+            )
+        elif self.dropdown_mapping[hyp_test_name] == "mw":
             # run Mann-Whitney test
-            intersect_sig_sylls = run_pairwise_stats(self.df, ctrl_group, exp_group,
-                                                     test_type='mw', statistic=stat, max_syllable=self.max_sylls)
+            intersect_sig_sylls = run_pairwise_stats(
+                self.df,
+                ctrl_group,
+                exp_group,
+                test_type="mw",
+                statistic=stat,
+                max_syllable=self.max_sylls,
+            )
 
-        if self.dropdown_mapping[hyp_test_name] != 'kw':
-            sig_sylls = list(intersect_sig_sylls[intersect_sig_sylls["is_sig"] == True].index)
+        if self.dropdown_mapping[hyp_test_name] != "kw":
+            sig_sylls = list(
+                intersect_sig_sylls[intersect_sig_sylls["is_sig"] == True].index
+            )
 
         return sig_sylls
 
-
-    def interactive_syll_stats_grapher(self, stat, sort, groupby, errorbar, sessions, ctrl_group, exp_group, hyp_test='KW & Dunn\'s', thresh='usage'):
+    def interactive_syll_stats_grapher(
+        self,
+        stat,
+        sort,
+        groupby,
+        errorbar,
+        sessions,
+        ctrl_group,
+        exp_group,
+        hyp_test="KW & Dunn's",
+        thresh="usage",
+    ):
         """
         handle ipywidgets interactions and update the currently displayed Bokeh plot.
 
@@ -237,30 +292,34 @@ class InteractiveSyllableStats(SyllableStatWidgets):
         thresh = self.dropdown_mapping[thresh.lower()]
 
         # Get selected syllable sorting
-        if sort.lower() == 'difference':
+        if sort.lower() == "difference":
             # display Text for groups to input experimental groups
-            ordering = sort_syllables_by_stat_difference(df, ctrl_group, exp_group, stat=stat)
+            ordering = sort_syllables_by_stat_difference(
+                df, ctrl_group, exp_group, stat=stat
+            )
 
             # run selected hypothesis test
             if ctrl_group != exp_group:
-                sig_sylls_indices = self.run_selected_hypothesis_test(hyp_test, stat, ctrl_group, exp_group)
+                sig_sylls_indices = self.run_selected_hypothesis_test(
+                    hyp_test, stat, ctrl_group, exp_group
+                )
 
                 # renumber the significant syllables s.t. they are plotted to match the current ordering.
                 sig_sylls = np.argsort(ordering)[sig_sylls_indices]
-        elif sort.lower() != 'usage':
+        elif sort.lower() != "usage":
             ordering, _ = sort_syllables_by_stat(df, stat=sortby)
         else:
             ordering = range(len(df.syllable.unique()))
 
         # Handle selective display for whether mutation sort is selected
-        if sort.lower() == 'difference':
+        if sort.lower() == "difference":
             self.mutation_box.layout.display = "block"
-            sort = f'Difference: {self.exp_dropdown.value} - {self.ctrl_dropdown.value}'
+            sort = f"Difference: {self.exp_dropdown.value} - {self.ctrl_dropdown.value}"
         else:
             self.mutation_box.layout.display = "none"
 
         # Handle selective display to select included sessions to graph
-        if groupby == 'SessionName' or groupby == 'SubjectName':
+        if groupby == "SessionName" or groupby == "SubjectName":
             mean_df = df.copy()
             df = df[df[groupby].isin(self.session_sel.value)]
             # set error bar to None because error bars are not implemented correctly in SessionName and SubjectName
@@ -270,12 +329,31 @@ class InteractiveSyllableStats(SyllableStatWidgets):
             self.error_box.layout.display = "block"
             mean_df = None
 
-        self.stat_fig = bokeh_plotting(df, stat, ordering, mean_df=mean_df, groupby=groupby, errorbar=errorbar,
-                                       syllable_families=None, sort_name=sort, thresh=thresh, sig_sylls=sig_sylls)
+        self.stat_fig = bokeh_plotting(
+            df,
+            stat,
+            ordering,
+            mean_df=mean_df,
+            groupby=groupby,
+            errorbar=errorbar,
+            syllable_families=None,
+            sort_name=sort,
+            thresh=thresh,
+            sig_sylls=sig_sylls,
+        )
 
 
 class InteractiveTransitionGraph(TransitionGraphWidgets):
-    def __init__(self, model_path, index_path, info_path, df_path, max_sylls, plot_vertically, load_parquet):
+    def __init__(
+        self,
+        model_path,
+        index_path,
+        info_path,
+        df_path,
+        max_sylls,
+        plot_vertically,
+        load_parquet,
+    ):
         """
         Initialize variables for interactive transition graph.
 
@@ -312,8 +390,8 @@ class InteractiveTransitionGraph(TransitionGraphWidgets):
         # Load Index File
         self.sorted_index = get_sorted_index(index_path)
 
-        if set(self.sorted_index['files']) != set(self.model_fit['metadata']['uuids']):
-            print('Warning: Index file UUIDs do not match model UUIDs.')
+        if set(self.sorted_index["files"]) != set(self.model_fit["metadata"]["uuids"]):
+            print("Warning: Index file UUIDs do not match model UUIDs.")
 
         # Load and store transition graph data
         self.initialize_transition_data()
@@ -324,12 +402,12 @@ class InteractiveTransitionGraph(TransitionGraphWidgets):
 
         # Manage dropdown menu values
         self.scalar_dict = {
-            'Default': 'speeds_2d',
-            'Duration': 'duration',
-            '2D velocity': 'speeds_2d',
-            '3D velocity': 'speeds_3d',
-            'Height': 'heights',
-            'Distance to Center': 'dists'
+            "Default": "speeds_2d",
+            "Duration": "duration",
+            "2D velocity": "speeds_2d",
+            "3D velocity": "speeds_3d",
+            "Height": "heights",
+            "Distance to Center": "dists",
         }
 
     def compute_entropies(self, labels, label_group):
@@ -346,17 +424,31 @@ class InteractiveTransitionGraph(TransitionGraphWidgets):
         for g in self.group:
             use_labels = [lbl for lbl, grp in zip(labels, label_group) if grp == g]
 
-            self.incoming_transition_entropy.append(np.mean(transition_entropy(use_labels,
-                                                    tm_smoothing=0,
-                                                    truncate_syllable=self.max_sylls,
-                                                    transition_type='incoming',
-                                                    relabel_by='usage'), axis=0))
+            self.incoming_transition_entropy.append(
+                np.mean(
+                    transition_entropy(
+                        use_labels,
+                        tm_smoothing=0,
+                        truncate_syllable=self.max_sylls,
+                        transition_type="incoming",
+                        relabel_by="usage",
+                    ),
+                    axis=0,
+                )
+            )
 
-            self.outgoing_transition_entropy.append(np.mean(transition_entropy(use_labels,
-                                                    tm_smoothing=0,
-                                                    truncate_syllable=self.max_sylls,
-                                                    transition_type='outgoing',
-                                                    relabel_by='usage'), axis=0))
+            self.outgoing_transition_entropy.append(
+                np.mean(
+                    transition_entropy(
+                        use_labels,
+                        tm_smoothing=0,
+                        truncate_syllable=self.max_sylls,
+                        transition_type="outgoing",
+                        relabel_by="usage",
+                    ),
+                    axis=0,
+                )
+            )
 
     def compute_entropy_differences(self):
         """
@@ -366,21 +458,27 @@ class InteractiveTransitionGraph(TransitionGraphWidgets):
         # Compute entropy + entropy rate differences
         for i in range(len(self.group)):
             for j in range(i + 1, len(self.group)):
-                self.incoming_transition_entropy.append(self.incoming_transition_entropy[j] - self.incoming_transition_entropy[i])
-                self.outgoing_transition_entropy.append(self.outgoing_transition_entropy[j] - self.outgoing_transition_entropy[i])
+                self.incoming_transition_entropy.append(
+                    self.incoming_transition_entropy[j]
+                    - self.incoming_transition_entropy[i]
+                )
+                self.outgoing_transition_entropy.append(
+                    self.outgoing_transition_entropy[j]
+                    - self.outgoing_transition_entropy[i]
+                )
 
     def initialize_transition_data(self):
         """
         Perform all necessary pre-processing to compute the transition graph data and syllable metadata to display via HoverTool.
         """
         with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
+            warnings.simplefilter("ignore")
 
             # Load Syllable Info
             self.syll_info = read_yaml(self.info_path)
 
             # Get labels and optionally relabel them by usage sorting
-            labels = self.model_fit['labels']
+            labels = self.model_fit["labels"]
 
             # get max_sylls
             if self.max_sylls is None:
@@ -389,16 +487,18 @@ class InteractiveTransitionGraph(TransitionGraphWidgets):
             for k in range(self.max_sylls):
                 # Open videos in encoded urls
                 # Implementation from: https://github.com/jupyter/notebook/issues/1024#issuecomment-338664139
-                if exists(self.syll_info[k]['crowd_movie_path']):
-                    video = io.open(self.syll_info[k]['crowd_movie_path'], 'r+b').read()
+                if exists(self.syll_info[k]["crowd_movie_path"]):
+                    video = io.open(self.syll_info[k]["crowd_movie_path"], "r+b").read()
                     encoded = base64.b64encode(video)
-                    self.syll_info[k]['crowd_movie_path'] = encoded.decode('ascii')
+                    self.syll_info[k]["crowd_movie_path"] = encoded.decode("ascii")
 
             if self.df_path is not None:
-                print('Loading parquet files')
-                df = pd.read_parquet(self.df_path, engine='pyarrow')
+                print("Loading parquet files")
+                df = pd.read_parquet(self.df_path, engine="pyarrow")
             else:
-                print('Syllable DataFrame not found. Creating new dataframe and computing syllable statistics...')
+                print(
+                    "Syllable DataFrame not found. Creating new dataframe and computing syllable statistics..."
+                )
                 df, _ = merge_labels_with_scalars(self.sorted_index, self.model_path)
             self.df = df
 
@@ -406,18 +506,22 @@ class InteractiveTransitionGraph(TransitionGraphWidgets):
             label_group, _ = get_trans_graph_groups(self.model_fit)
             self.group = sorted(list(set(label_group)))
 
-            labels = relabel_by_usage(labels, count='usage')[0]
+            labels = relabel_by_usage(labels, count="usage")[0]
 
             # self.compute_entropies(labels, label_group)
 
             # Compute usages and transition matrices
-            self.trans_mats, self.usages = get_group_trans_mats(labels, label_group, sorted(self.group), self.max_sylls)
-            self.df = self.df[self.df['syllable'] < self.max_sylls]
-            self.df = self.df.groupby(['group', 'syllable'], as_index=False).mean()
+            self.trans_mats, self.usages = get_group_trans_mats(
+                labels, label_group, sorted(self.group), self.max_sylls
+            )
+            self.df = self.df[self.df["syllable"] < self.max_sylls]
+            self.df = self.df.groupby(["group", "syllable"], as_index=False).mean()
 
             # self.compute_entropy_differences()
 
-    def interactive_transition_graph_helper(self, layout, edge_threshold, usage_threshold):
+    def interactive_transition_graph_helper(
+        self, layout, edge_threshold, usage_threshold
+    ):
         """
         generate all the transition graphs given the currently selected thresholding values, then display them in a Jupyter notebook or web page.
 
@@ -429,7 +533,7 @@ class InteractiveTransitionGraph(TransitionGraphWidgets):
         speed_threshold (tuple or ipywidgets.FloatRangeSlider): Syllable speed range to include in graphs.
         """
         with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
+            warnings.simplefilter("ignore")
 
             # Get graph node anchors
             anchor = 0
@@ -440,30 +544,32 @@ class InteractiveTransitionGraph(TransitionGraphWidgets):
             # Get anchored group scalars
             scalars = defaultdict(list)
             _scalar_map = {
-                'duration': 'duration',
-                'speeds_2d': 'velocity_2d_mm_mean',
-                'speeds_3d': 'velocity_3d_mm_mean',
-                'heights': 'height_ave_mm_mean',
-                'dists': 'dist_to_center_px_mean'
+                "duration": "duration",
+                "speeds_2d": "velocity_2d_mm_mean",
+                "speeds_3d": "velocity_3d_mm_mean",
+                "heights": "height_ave_mm_mean",
+                "dists": "dist_to_center_px_mean",
             }
             # loop thru each group and append a syllable -> scalar value mapping to collection above
             for g in self.group:
-                group_df = self.df.query('group == @g').set_index('syllable')
+                group_df = self.df.query("group == @g").set_index("syllable")
                 for new_scalar, old_scalar in _scalar_map.items():
                     scalars[new_scalar].append(dict(group_df[old_scalar]))
 
             # key = self.scalar_dict.get(scalar_color, 'speeds_2d')
             # scalar_anchor = scalars[key][anchor]
 
-            usage_kwargs = {
-                'usages': usages_anchor,
-                'usage_threshold': usage_threshold
-            }
+            usage_kwargs = {"usages": usages_anchor, "usage_threshold": usage_threshold}
 
             # Create graph with nodes and edges
             ebunch_anchor, orphans = convert_transition_matrix_to_ebunch(
-                self.trans_mats[anchor], self.trans_mats[anchor], edge_threshold=edge_threshold,
-                keep_orphans=True, max_syllable=self.max_sylls, **usage_kwargs)
+                self.trans_mats[anchor],
+                self.trans_mats[anchor],
+                edge_threshold=edge_threshold,
+                keep_orphans=True,
+                max_syllable=self.max_sylls,
+                **usage_kwargs,
+            )
             indices = [e[:-1] for e in ebunch_anchor]
 
             # Get graph anchor
@@ -475,21 +581,30 @@ class InteractiveTransitionGraph(TransitionGraphWidgets):
             group_names = self.group.copy()
 
             # prepare transition graphs
-            usages, group_names, _, _, _, graphs, scalars = make_transition_graphs(self.trans_mats,
-                                                                                usages[:len(self.group)],
-                                                                                self.group,
-                                                                                group_names,
-                                                                                pos=pos,
-                                                                                indices=indices,
-                                                                                orphans=orphans,
-                                                                                edge_threshold=edge_threshold,
-                                                                                arrows=True,
-                                                                                scalars=scalars,
-                                                                                usage_kwargs=usage_kwargs,
-                                                                                )
+            usages, group_names, _, _, _, graphs, scalars = make_transition_graphs(
+                self.trans_mats,
+                usages[: len(self.group)],
+                self.group,
+                group_names,
+                pos=pos,
+                indices=indices,
+                orphans=orphans,
+                edge_threshold=edge_threshold,
+                arrows=True,
+                scalars=scalars,
+                usage_kwargs=usage_kwargs,
+            )
 
             # interactive plot transition graphs
-            plot_interactive_transition_graph(graphs, pos, self.group,
-                                            group_names, usages, self.syll_info,
-                                            [], [],
-                                            scalars=scalars, plot_vertically=self.plot_vertically)
+            plot_interactive_transition_graph(
+                graphs,
+                pos,
+                self.group,
+                group_names,
+                usages,
+                self.syll_info,
+                [],
+                [],
+                scalars=scalars,
+                plot_vertically=self.plot_vertically,
+            )

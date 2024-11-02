@@ -1,6 +1,7 @@
 """
 Interactive ROI/Extraction Bokeh visualization functions.
 """
+
 import os
 import io
 import base64
@@ -28,7 +29,9 @@ def show_extraction(input_file, video_file):
 
     # Copy generated movie to temporary directory
     vid_dir = dirname(video_file)
-    tmp_path = join(vid_dir, 'tmp', f'{np.random.randint(0, 99999)}_{os.path.basename(video_file)}')
+    tmp_path = join(
+        vid_dir, "tmp", f"{np.random.randint(0, 99999)}_{os.path.basename(video_file)}"
+    )
     tmp_dirname = dirname(tmp_path)
 
     if not exists(tmp_dirname):
@@ -37,13 +40,13 @@ def show_extraction(input_file, video_file):
     if video_file != tmp_path:
         shutil.copy2(video_file, tmp_path)
 
-    video_dims = get_video_info(tmp_path)['dims']
+    video_dims = get_video_info(tmp_path)["dims"]
 
     # Open videos in encoded urls
     # Implementation from: https://github.com/jupyter/notebook/issues/1024#issuecomment-338664139
-    vid = io.open(tmp_path, 'r+b').read()
+    vid = io.open(tmp_path, "r+b").read()
     encoded = base64.b64encode(vid)
-    tmp_path = encoded.decode('ascii')
+    tmp_path = encoded.decode("ascii")
 
     video_div = f"""
                     <h2>{input_file}</h2>
@@ -55,16 +58,23 @@ def show_extraction(input_file, video_file):
                     </video>
                 """
 
-    div = Div(text=video_div, style={'width': '100%', 'align-items': 'center', 'display': 'contents'})
+    div = Div(
+        text=video_div,
+        style={"width": "100%", "align-items": "center", "display": "contents"},
+    )
 
-    output = widgets.Output(layout=widgets.Layout(align_items='center', display='inline-block',
-                                                  height='100%', width='100%'))
+    output = widgets.Output(
+        layout=widgets.Layout(
+            align_items="center", display="inline-block", height="100%", width="100%"
+        )
+    )
     with output:
         show(div)
 
     display(output)
 
     return output
+
 
 def bokeh_plot_helper(bk_fig, image):
     """
@@ -77,17 +87,21 @@ def bokeh_plot_helper(bk_fig, image):
 
     bk_fig.x_range.range_padding = bk_fig.y_range.range_padding = 0
     if isinstance(image, dict):
-        bk_fig.image(source=image,
-                     image='image',
-                     x='x',
-                     y='y',
-                     dw='dw',
-                     dh='dh',
-                     palette="Viridis256")
+        bk_fig.image(
+            source=image,
+            image="image",
+            x="x",
+            y="y",
+            dw="dw",
+            dh="dh",
+            palette="Viridis256",
+        )
     else:
-        bk_fig.image(image=[image],
-                     x=0,
-                     y=0,
-                     dw=image.shape[1],
-                     dh=image.shape[0],
-                     palette="Viridis256")
+        bk_fig.image(
+            image=[image],
+            x=0,
+            y=0,
+            dw=image.shape[1],
+            dh=image.shape[0],
+            palette="Viridis256",
+        )

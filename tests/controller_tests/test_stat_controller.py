@@ -6,7 +6,10 @@ from unittest import TestCase
 from moseq2_app.main import label_syllables
 from moseq2_viz.model.util import relabel_by_usage
 from moseq2_viz.model.trans_graph import get_trans_graph_groups
-from moseq2_app.stat.controller import InteractiveSyllableStats, InteractiveTransitionGraph
+from moseq2_app.stat.controller import (
+    InteractiveSyllableStats,
+    InteractiveTransitionGraph,
+)
 
 # class TestSyllableStatController(TestCase):
 

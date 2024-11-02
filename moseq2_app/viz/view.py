@@ -8,6 +8,7 @@ import ipywidgets as widgets
 from bokeh.layouts import gridplot
 from IPython.display import display
 
+
 def display_crowd_movies(widget_box, curr_name, desc, divs, bk_figs):
     """
     display the crowd movies in jupyter notebook.
@@ -19,7 +20,8 @@ def display_crowd_movies(widget_box, curr_name, desc, divs, bk_figs):
     """
 
     # Set HTML formats
-    movie_table = """
+    movie_table = (
+        """
                     <html>
                     <head>
                     <style>
@@ -52,20 +54,21 @@ def display_crowd_movies(widget_box, curr_name, desc, divs, bk_figs):
                             text-align: center;
                         }
                     </style>
-                    </head>""" + \
-                  f"""
+                    </head>"""
+        + f"""
                     <body>
                     <h3>Name: {curr_name}</h3>
                     <h3>Description: {desc}</h3>
                     <br>
                     <div class="row"; style="background-color:#ffffff; height:auto;">
                   """
+    )
 
     # Create div grid
     for i, div in enumerate(divs):
         if (i % 2 == 0) and i > 0:
             # make a new row
-            movie_table += '</div>'
+            movie_table += "</div>"
             col = f"""
                       <div class="row"; style="background-color:#ffffff; height:auto;">
                           <div class="column">
@@ -82,9 +85,9 @@ def display_crowd_movies(widget_box, curr_name, desc, divs, bk_figs):
         movie_table += col
 
     # Close last div
-    movie_table += '</div>\
+    movie_table += "</div>\
                     </body>\
-                    </html>'
+                    </html>"
 
     div2 = Div(text=movie_table)
 
@@ -96,7 +99,7 @@ def display_crowd_movies(widget_box, curr_name, desc, divs, bk_figs):
         gp = gridplot(bk_figs, ncols=2, plot_width=250, plot_height=250)
 
         # Create Output widget object to center grid plot in view
-        output = widgets.Output(layout=widgets.Layout(align_items='center'))
+        output = widgets.Output(layout=widgets.Layout(align_items="center"))
         with output:
             show(gp)
 

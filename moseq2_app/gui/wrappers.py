@@ -9,12 +9,20 @@ from moseq2_viz.util import read_yaml
 from ipywidgets import interactive_output
 from IPython.display import display, clear_output
 from moseq2_app.gui.progress import get_session_paths
-from moseq2_viz.model.util import (relabel_by_usage, parse_model_results,
-                                   compute_syllable_explained_variance)
+from moseq2_viz.model.util import (
+    relabel_by_usage,
+    parse_model_results,
+    compute_syllable_explained_variance,
+)
 from moseq2_app.viz.controller import SyllableLabeler, CrowdMovieComparison
 from moseq2_app.stat.controller import InteractiveTransitionGraph
-from moseq2_app.roi.validation import (make_session_status_dicts, get_scalar_anomaly_sessions,
-                                       get_scalar_df, print_validation_results)
+from moseq2_app.roi.validation import (
+    make_session_status_dicts,
+    get_scalar_anomaly_sessions,
+    get_scalar_df,
+    print_validation_results,
+)
+
 
 def validate_extractions_wrapper(input_dir):
     """
@@ -39,8 +47,19 @@ def validate_extractions_wrapper(input_dir):
     # Print Results
     print_validation_results(scalar_df, status_dicts)
 
-def interactive_syllable_labeler_wrapper(model_path, config_file, index_file, crowd_movie_dir, output_file, fig_dir,
-                                         max_syllables=None, n_explained=99, select_median_duration_instances=False, max_examples=20):
+
+def interactive_syllable_labeler_wrapper(
+    model_path,
+    config_file,
+    index_file,
+    crowd_movie_dir,
+    output_file,
+    fig_dir,
+    max_syllables=None,
+    n_explained=99,
+    select_median_duration_instances=False,
+    max_examples=20,
+):
     """
     launch a syllable crowd movie preview and interactive labeling application.
 
@@ -61,27 +80,33 @@ def interactive_syllable_labeler_wrapper(model_path, config_file, index_file, cr
     model = parse_model_results(model_path)
 
     # Compute the sorted labels
-    model['labels'] = relabel_by_usage(model['labels'], count='usage')[0]
+    model["labels"] = relabel_by_usage(model["labels"], count="usage")[0]
 
     # Get Maximum number of syllables to include
     if max_syllables is None:
-        max_sylls = compute_syllable_explained_variance(model, fig_dir, n_explained=n_explained)
+        max_sylls = compute_syllable_explained_variance(
+            model, fig_dir, n_explained=n_explained
+        )
     else:
         max_sylls = max_syllables
 
     # Make initial syllable information dict
-    labeler = SyllableLabeler(model_fit=model,
-                              model_path=model_path,
-                              index_file=index_file,
-                              config_file=config_file,
-                              max_sylls=max_sylls,
-                              select_median_duration_instances=select_median_duration_instances,
-                              max_examples=max_examples,
-                              crowd_movie_dir=crowd_movie_dir,
-                              save_path=output_file)
+    labeler = SyllableLabeler(
+        model_fit=model,
+        model_path=model_path,
+        index_file=index_file,
+        config_file=config_file,
+        max_sylls=max_sylls,
+        select_median_duration_instances=select_median_duration_instances,
+        max_examples=max_examples,
+        crowd_movie_dir=crowd_movie_dir,
+        save_path=output_file,
+    )
 
     # Launch and display interactive API
-    output = widgets.interactive_output(labeler.interactive_syllable_labeler, {'syllables': labeler.syll_select})
+    output = widgets.interactive_output(
+        labeler.interactive_syllable_labeler, {"syllables": labeler.syll_select}
+    )
     display(labeler.clear_button, labeler.syll_select, output)
     return max_sylls
 
@@ -97,10 +122,19 @@ def interactive_syllable_labeler_wrapper(model_path, config_file, index_file, cr
         display(labeler.syll_select, output)
 
     # Update view when user selects new syllable from DropDownMenu
-    output.observe(on_syll_change, names='value')
+    output.observe(on_syll_change, names="value")
 
-def interactive_crowd_movie_comparison_preview_wrapper(config_filepath, index_path, model_path, syll_info_path, output_dir,
-                                               df_path=None, get_pdfs=True, load_parquet=False):
+
+def interactive_crowd_movie_comparison_preview_wrapper(
+    config_filepath,
+    index_path,
+    model_path,
+    syll_info_path,
+    output_dir,
+    df_path=None,
+    get_pdfs=True,
+    load_parquet=False,
+):
     """
     launch an interactive crowd movie comparison application.
 
@@ -118,18 +152,37 @@ def interactive_crowd_movie_comparison_preview_wrapper(config_filepath, index_pa
     config_data = read_yaml(config_filepath)
     syll_info = read_yaml(syll_info_path)
 
-    cm_compare = CrowdMovieComparison(config_data=config_data, index_path=index_path, df_path=df_path,
-                                      model_path=model_path, syll_info=syll_info, output_dir=output_dir,
-                                      get_pdfs=get_pdfs, load_parquet=load_parquet)
+    cm_compare = CrowdMovieComparison(
+        config_data=config_data,
+        index_path=index_path,
+        df_path=df_path,
+        model_path=model_path,
+        syll_info=syll_info,
+        output_dir=output_dir,
+        get_pdfs=get_pdfs,
+        load_parquet=load_parquet,
+    )
 
-    out = interactive_output(cm_compare.crowd_movie_preview, {'syllable': cm_compare.cm_syll_select,
-                                                              'groupby': cm_compare.cm_sources_dropdown,
-                                                              'nexamples': cm_compare.num_examples})
+    out = interactive_output(
+        cm_compare.crowd_movie_preview,
+        {
+            "syllable": cm_compare.cm_syll_select,
+            "groupby": cm_compare.cm_sources_dropdown,
+            "nexamples": cm_compare.num_examples,
+        },
+    )
     display(cm_compare.clear_button, out)
 
 
-def interactive_plot_transition_graph_wrapper(model_path, index_path, info_path, df_path=None, 
-                                              max_syllables=None, plot_vertically=False, load_parquet=False):
+def interactive_plot_transition_graph_wrapper(
+    model_path,
+    index_path,
+    info_path,
+    df_path=None,
+    max_syllables=None,
+    plot_vertically=False,
+    load_parquet=False,
+):
     """
     prepare the data for the interactive graphing function.
 
@@ -143,18 +196,26 @@ def interactive_plot_transition_graph_wrapper(model_path, index_path, info_path,
     """
 
     # Initialize Transition Graph data structure
-    i_trans_graph = InteractiveTransitionGraph(model_path=model_path, index_path=index_path,
-                                               info_path=info_path, df_path=df_path,
-                                               max_sylls=max_syllables, plot_vertically=plot_vertically,
-                                               load_parquet=load_parquet)
+    i_trans_graph = InteractiveTransitionGraph(
+        model_path=model_path,
+        index_path=index_path,
+        info_path=info_path,
+        df_path=df_path,
+        max_sylls=max_syllables,
+        plot_vertically=plot_vertically,
+        load_parquet=load_parquet,
+    )
 
     # Make graphs
-    out = interactive_output(i_trans_graph.interactive_transition_graph_helper,
-                             {'layout': i_trans_graph.graph_layout_dropdown,
-                              # 'scalar_color': i_trans_graph.color_nodes_dropdown,
-                              'edge_threshold': i_trans_graph.edge_thresholder,
-                              'usage_threshold': i_trans_graph.usage_thresholder,
-                              })
+    out = interactive_output(
+        i_trans_graph.interactive_transition_graph_helper,
+        {
+            "layout": i_trans_graph.graph_layout_dropdown,
+            # 'scalar_color': i_trans_graph.color_nodes_dropdown,
+            "edge_threshold": i_trans_graph.edge_thresholder,
+            "usage_threshold": i_trans_graph.usage_thresholder,
+        },
+    )
 
     # Display widgets and bokeh network plots
     display(i_trans_graph.clear_button, i_trans_graph.thresholding_box, out)

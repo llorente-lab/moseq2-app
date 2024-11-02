@@ -25,11 +25,17 @@ def generate_missing_metadata(sess_dir, sess_name):
     """
 
     # generate sample metadata json for each session that is missing one
-    sample_meta = {'SubjectName': f'{basename(sess_dir)}', f'SessionName': f'{sess_name}',
-                   'NidaqChannels': 0, 'NidaqSamplingRate': 0.0, 'DepthResolution': [512, 424],
-                   'ColorDataType': "Byte[]", "StartTime": ""}
+    sample_meta = {
+        "SubjectName": f"{basename(sess_dir)}",
+        f"SessionName": f"{sess_name}",
+        "NidaqChannels": 0,
+        "NidaqSamplingRate": 0.0,
+        "DepthResolution": [512, 424],
+        "ColorDataType": "Byte[]",
+        "StartTime": "",
+    }
 
-    with open(join(sess_dir, 'metadata.json'), 'w') as fp:
+    with open(join(sess_dir, "metadata.json"), "w") as fp:
         json.dump(sample_meta, fp)
 
 
@@ -39,17 +45,17 @@ def _is_unextracted(folder):
 
     Args:
         folder (str): path to depth recording
-    
+
     Return:
         (bool): whether the session is extracted
     """
-    if not exists(join(folder, 'proc')):
+    if not exists(join(folder, "proc")):
         return True
-    elif not exists(join(folder, 'proc', 'results_00.yaml')):
+    elif not exists(join(folder, "proc", "results_00.yaml")):
         return True
     # if results.yaml exists, then check if extraction has successfully completed
-    results_dict = read_yaml(join(folder, 'proc', 'results_00.yaml'))
-    return not results_dict.get('complete', False)
+    results_dict = read_yaml(join(folder, "proc", "results_00.yaml"))
+    return not results_dict.get("complete", False)
 
 
 def _has_metadata(folder):
@@ -62,10 +68,12 @@ def _has_metadata(folder):
     Returns:
         (bool): whether there is metadata
     """
-    return exists(join(folder, 'metadata.json'))
+    return exists(join(folder, "metadata.json"))
 
 
-def get_sessions(data_dir, skip_extracted=True, extensions=('dat', 'mkv', 'avi', 'tar.gz')):
+def get_sessions(
+    data_dir, skip_extracted=True, extensions=("dat", "mkv", "avi", "tar.gz")
+):
     """get sessions to extract
 
     Args:
@@ -77,12 +85,14 @@ def get_sessions(data_dir, skip_extracted=True, extensions=('dat', 'mkv', 'avi',
         _type_: _description_
     """
     # look for files in subfolders
-    files = [glob(join(data_dir, '**', f'*.{ext}'), recursive=True) for ext in extensions]
+    files = [
+        glob(join(data_dir, "**", f"*.{ext}"), recursive=True) for ext in extensions
+    ]
     # concatenate all files of different extensions
     files = sorted(reduce(add, files))
 
     def is_ir_file(f):
-        return 'ir.avi' in basename(f) or 'ir.dat' in basename(f)
+        return "ir.avi" in basename(f) or "ir.dat" in basename(f)
 
     # remove IR videos
     files = filter(complement(is_ir_file), files)
@@ -97,7 +107,9 @@ def get_sessions(data_dir, skip_extracted=True, extensions=('dat', 'mkv', 'avi',
     return files
 
 
-def get_session_paths(data_dir, extracted=False, flipped=False, exts=['dat', 'mkv', 'avi']):
+def get_session_paths(
+    data_dir, extracted=False, flipped=False, exts=["dat", "mkv", "avi"]
+):
     """
     Find all depth recording sessions and their paths (with given extensions) to work on given base directory.
 
@@ -112,12 +124,12 @@ def get_session_paths(data_dir, extracted=False, flipped=False, exts=['dat', 'mk
     """
 
     if extracted:
-        path = '*/proc/*.'
+        path = "*/proc/*."
         if flipped:
-            path = '*/proc/*_flipped.'
-        exts = ['mp4']
+            path = "*/proc/*_flipped."
+        exts = ["mp4"]
     else:
-        path = '*/*.'
+        path = "*/*."
 
     sessions = []
 
@@ -129,29 +141,33 @@ def get_session_paths(data_dir, extracted=False, flipped=False, exts=['dat', 'mk
             if flipped:
                 files = sorted(glob(path + ext))
             else:
-                files = [f for f in sorted(glob(path + ext)) if 'flipped' not in f]
+                files = [f for f in sorted(glob(path + ext)) if "flipped" not in f]
         else:
             data_dir = data_dir.strip()
             if os.path.isdir(data_dir):
                 if flipped:
                     files = sorted(glob(os.path.join(data_dir, path + ext)))
                 else:
-                    files = [f for f in sorted(glob(os.path.join(data_dir, path + ext))) if 'flipped' not in f]
+                    files = [
+                        f
+                        for f in sorted(glob(os.path.join(data_dir, path + ext)))
+                        if "flipped" not in f
+                    ]
             else:
-                print('directory not found, try again.')
+                print("directory not found, try again.")
         if ext in ("dat", "avi"):
             files = [f for f in files if f"ir.{ext}" != f and "depth" in f]
         sessions += files
 
     if len(sessions) == 0:
         if extracted:
-            sessions = sorted(glob(join(data_dir, '*.mp4')))
+            sessions = sorted(glob(join(data_dir, "*.mp4")))
         else:
             for ext in exts:
-                sessions += sorted(glob(join(data_dir, f'*.{ext}')))
+                sessions += sorted(glob(join(data_dir, f"*.{ext}")))
 
     if extracted:
-        names = [dirname(sess).split('/')[-2] for sess in sessions]
+        names = [dirname(sess).split("/")[-2] for sess in sessions]
         if len(set(names)) == len(sessions):
             path_dict = {n: p for n, p in zip(names, sessions)}
         else:
@@ -161,7 +177,7 @@ def get_session_paths(data_dir, extracted=False, flipped=False, exts=['dat', 'mk
             # get path to session directory
             sess_dir = dirname(sess)
             sess_name = basename(sess_dir)
-            if 'metadata.json' not in os.listdir(sess_dir):
+            if "metadata.json" not in os.listdir(sess_dir):
                 # Generate metadata.json file if it's missing
                 generate_missing_metadata(sess_dir, sess_name)
 
@@ -173,6 +189,7 @@ def get_session_paths(data_dir, extracted=False, flipped=False, exts=['dat', 'mk
             path_dict = {basename(p): p for p in sessions}
 
     return path_dict
+
 
 def update_progress(progress_file, varK, varV):
     """
@@ -193,26 +210,27 @@ def update_progress(progress_file, varK, varV):
     progress = read_yaml(progress_file)
 
     if isinstance(varV, str):
-        old_value = progress.get(varK, '') # get previous variable to print        
+        old_value = progress.get(varK, "")  # get previous variable to print
 
         if old_value == varV:
-            print('Variables are the same. No update necessary.')
+            print("Variables are the same. No update necessary.")
             return progress
 
         progress[varK] = varV
 
         # update snapshot variable
-        progress['snapshot'] = str(uuid.uuid4())
+        progress["snapshot"] = str(uuid.uuid4())
 
-        with open(progress_file, 'w') as f:
+        with open(progress_file, "w") as f:
             yml.dump(progress, f)
 
-        print(f'Successfully updated progress file with {varK} -> {varV}')
+        print(f"Successfully updated progress file with {varK} -> {varV}")
     else:
-        print('Entered path is invalid.')
-        print('Ensure you are updating the progress file with string paths only.')
+        print("Entered path is invalid.")
+        print("Ensure you are updating the progress file with string paths only.")
 
     return progress
+
 
 def find_progress(base_progress):
     """
@@ -225,81 +243,96 @@ def find_progress(base_progress):
     base_progress (dict): updated dictionary of progress variables
     """
 
-    base_dir = base_progress['base_dir']
-    yamls = glob(join(base_dir, '*.yaml'))
+    base_dir = base_progress["base_dir"]
+    yamls = glob(join(base_dir, "*.yaml"))
 
-    if join(base_dir, 'config.yaml') in yamls:
-        base_progress['config_file'] = join(base_dir, 'config.yaml')
+    if join(base_dir, "config.yaml") in yamls:
+        base_progress["config_file"] = join(base_dir, "config.yaml")
 
-    if join(base_dir, 'session_config.yaml') in yamls:
-        base_progress['session_config'] = join(base_dir, 'session_config.yaml')
+    if join(base_dir, "session_config.yaml") in yamls:
+        base_progress["session_config"] = join(base_dir, "session_config.yaml")
 
-    if join(base_dir, 'moseq2-index.yaml') in yamls:
-        base_progress['index_file'] = join(base_dir, 'moseq2-index.yaml')
+    if join(base_dir, "moseq2-index.yaml") in yamls:
+        base_progress["index_file"] = join(base_dir, "moseq2-index.yaml")
 
-    if exists(join(base_dir, 'aggregate_results/')):
-        base_progress['train_data_dir'] = join(base_dir, 'aggregate_results/')
-    
+    if exists(join(base_dir, "aggregate_results/")):
+        base_progress["train_data_dir"] = join(base_dir, "aggregate_results/")
+
     # initialize param
     pca_score = None
     changepoint = None
     # Read config.yaml to get the pca related paths
-    if exists(base_progress['config_file'] ):
-        config_data = read_yaml(base_progress['config_file'])
-        
-        pca_score = config_data.get('pca_file_scores')
-        changepoint = config_data.get('changepoint_file')
-    
+    if exists(base_progress["config_file"]):
+        config_data = read_yaml(base_progress["config_file"])
+
+        pca_score = config_data.get("pca_file_scores")
+        changepoint = config_data.get("changepoint_file")
+
     # if pca_score is in config.yaml and the file exists, use that in the progress dictionary
     if pca_score and exists(pca_score):
-        base_progress['pca_dirname'] = abspath(dirname(pca_score))
-        base_progress['scores_filename'] = basename(pca_score)
-        base_progress['scores_path'] = abspath(pca_score)
+        base_progress["pca_dirname"] = abspath(dirname(pca_score))
+        base_progress["scores_filename"] = basename(pca_score)
+        base_progress["scores_path"] = abspath(pca_score)
     # use default
-    elif exists(join(base_dir, '_pca/')):
-        base_progress['pca_dirname'] = join(base_dir, '_pca/')
-        base_progress['scores_filename'] = 'pca_scores'
-        if exists(join(base_progress['pca_dirname'], base_progress['scores_filename'] +'.h5')):
-            base_progress['scores_path'] = join(base_dir, '_pca/', 'pca_scores.h5')
+    elif exists(join(base_dir, "_pca/")):
+        base_progress["pca_dirname"] = join(base_dir, "_pca/")
+        base_progress["scores_filename"] = "pca_scores"
+        if exists(
+            join(base_progress["pca_dirname"], base_progress["scores_filename"] + ".h5")
+        ):
+            base_progress["scores_path"] = join(base_dir, "_pca/", "pca_scores.h5")
     else:
-        print('Unable to find PC score file. Either:\n    1) run the pca step, or if you did\n    2) manually add PCA paths using the update_progress function')
-    
+        print(
+            "Unable to find PC score file. Either:\n    1) run the pca step, or if you did\n    2) manually add PCA paths using the update_progress function"
+        )
+
     # Add pc score to moseq2-index.yaml file if it is empty because it is run from cli
-    if base_progress.get('index_file') and exists(base_progress.get('index_file')):
-        index_params = read_yaml(base_progress.get('index_file'))
-        if base_progress.get('scores_path') and exists(base_progress.get('scores_path')):
-            index_params['pca_path'] = base_progress.get('scores_path')
-            with open(base_progress.get('index_file'), 'w') as f:
+    if base_progress.get("index_file") and exists(base_progress.get("index_file")):
+        index_params = read_yaml(base_progress.get("index_file"))
+        if base_progress.get("scores_path") and exists(
+            base_progress.get("scores_path")
+        ):
+            index_params["pca_path"] = base_progress.get("scores_path")
+            with open(base_progress.get("index_file"), "w") as f:
                 yaml.safe_dump(index_params, f)
         else:
-            print('Please ensure "pca_path" in moseq2-index.yaml is the path to pc_score h5 file before running interactive model analysis')
-    
+            print(
+                'Please ensure "pca_path" in moseq2-index.yaml is the path to pc_score h5 file before running interactive model analysis'
+            )
+
     # if changepoint is in config.yaml and the file exists, use that in the progress dictionary
     if changepoint and exists(changepoint):
-        base_progress['changepoints_path'] = changepoint
+        base_progress["changepoints_path"] = changepoint
     # use default
-    elif exists(join(base_progress['pca_dirname'], 'changepoints.h5')):
-        base_progress['changepoints_path'] = join(base_progress['pca_dirname'], 'changepoints.h5')
+    elif exists(join(base_progress["pca_dirname"], "changepoints.h5")):
+        base_progress["changepoints_path"] = join(
+            base_progress["pca_dirname"], "changepoints.h5"
+        )
     else:
-        print('Unable to find changepoint file. Either:\n    1) run the pca step, or if you did\n    2) manually add PCA paths using the update_progress function')
-             
-    models = glob(join(base_dir, '**/*.p'), recursive=True)
+        print(
+            "Unable to find changepoint file. Either:\n    1) run the pca step, or if you did\n    2) manually add PCA paths using the update_progress function"
+        )
+
+    models = glob(join(base_dir, "**/*.p"), recursive=True)
 
     if len(models) > 1:
         models = sorted(models, key=os.path.getmtime)
-        print(f'More than 1 model found. Setting model path to latest generated model: {models[0]}')
+        print(
+            f"More than 1 model found. Setting model path to latest generated model: {models[0]}"
+        )
     # avoid models not found
     if len(models) > 0:
-        base_progress['model_path'] = models[0]
-        base_progress['model_session_path'] = dirname(models[0])
-        base_progress['base_model_path'] = dirname(models[0])
-        if exists(join(dirname(models[0]), 'syll_info.yaml')):
-            base_progress['syll_info'] = join(dirname(models[0]), 'syll_info.yaml')
-        if exists(join(dirname(models[0]), 'crowd_movies/')):
-            base_progress['crowd_dir'] = join(dirname(models[0]), 'crowd_movies/')
+        base_progress["model_path"] = models[0]
+        base_progress["model_session_path"] = dirname(models[0])
+        base_progress["base_model_path"] = dirname(models[0])
+        if exists(join(dirname(models[0]), "syll_info.yaml")):
+            base_progress["syll_info"] = join(dirname(models[0]), "syll_info.yaml")
+        if exists(join(dirname(models[0]), "crowd_movies/")):
+            base_progress["crowd_dir"] = join(dirname(models[0]), "crowd_movies/")
     return base_progress
 
-def generate_intital_progressfile(filename='progress.yaml'):
+
+def generate_intital_progressfile(filename="progress.yaml"):
     """
     Generate a progress YAML file with the scanned parameter paths.
 
@@ -315,31 +348,34 @@ def generate_intital_progressfile(filename='progress.yaml'):
 
     base_dir = dirname(filename)
 
-    print(f'Generating progress path at: {filename}')
+    print(f"Generating progress path at: {filename}")
 
     # Create basic progress file
-    base_progress_vars = {'base_dir': abspath(base_dir),
-                          'config_file': '',
-                          'session_config': '',
-                          'index_file': '',
-                          'train_data_dir': '',
-                          'pca_dirname': '',
-                          'scores_filename': '',
-                          'scores_path': '',
-                          'changepoints_path': '',
-                          'model_path': '',
-                          'crowd_dir': '',
-                          'syll_info': '',
-                          'plot_path': join(base_dir, 'plots/'),
-                          'snapshot': str(uuid.uuid4())}
+    base_progress_vars = {
+        "base_dir": abspath(base_dir),
+        "config_file": "",
+        "session_config": "",
+        "index_file": "",
+        "train_data_dir": "",
+        "pca_dirname": "",
+        "scores_filename": "",
+        "scores_path": "",
+        "changepoints_path": "",
+        "model_path": "",
+        "crowd_dir": "",
+        "syll_info": "",
+        "plot_path": join(base_dir, "plots/"),
+        "snapshot": str(uuid.uuid4()),
+    }
 
     # Find progress in given base directory
     base_progress_vars = find_progress(base_progress_vars)
 
-    with open(filename, 'w') as f:
+    with open(filename, "w") as f:
         yml.dump(base_progress_vars, f)
 
     return base_progress_vars
+
 
 def load_progress(progress_file):
     """
@@ -353,15 +389,20 @@ def load_progress(progress_file):
     """
 
     if exists(progress_file):
-        print('Updating notebook variables...')
+        print("Updating notebook variables...")
         progress_vars = read_yaml(progress_file)
     else:
-        print('Progress file not found. To generate a new one, set restore_progress_vars(progress_file, init=True)')
+        print(
+            "Progress file not found. To generate a new one, set restore_progress_vars(progress_file, init=True)"
+        )
         progress_vars = None
 
     return progress_vars
 
-def restore_progress_vars(progress_file=abspath('./progress.yaml'), init=False, overwrite=False):
+
+def restore_progress_vars(
+    progress_file=abspath("./progress.yaml"), init=False, overwrite=False
+):
     """
     Restore all saved progress variables to Jupyter Notebook.
 
@@ -373,7 +414,7 @@ def restore_progress_vars(progress_file=abspath('./progress.yaml'), init=False, 
     """
 
     if overwrite:
-        print('Overwriting progress file with initial progress.')
+        print("Overwriting progress file with initial progress.")
         # overwrite progress file with initial progress
         progress_vars = generate_intital_progressfile(progress_file)
     elif init and not exists(progress_file):
@@ -384,6 +425,7 @@ def restore_progress_vars(progress_file=abspath('./progress.yaml'), init=False, 
         progress_vars = load_progress(progress_file)
 
     return progress_vars
+
 
 def get_pca_progress(progress_vars, pca_progress):
     """
@@ -400,15 +442,19 @@ def get_pca_progress(progress_vars, pca_progress):
     # Get PCA Progress
     for key in pca_progress:
         if progress_vars.get(key) is not None:
-            if key == 'pca_dirname':
-                if exists(join(progress_vars[key], 'pca.h5')):
+            if key == "pca_dirname":
+                if exists(join(progress_vars[key], "pca.h5")):
                     pca_progress[key] = True
             # changepoints field only include the filename with no path and extension or abspath to the file
-            elif key == 'changepoints_path':
-                if dirname(abspath(progress_vars[key])) == abspath(progress_vars['pca_dirname']) and exists(progress_vars[key]):
+            elif key == "changepoints_path":
+                if dirname(abspath(progress_vars[key])) == abspath(
+                    progress_vars["pca_dirname"]
+                ) and exists(progress_vars[key]):
                     pca_progress[key] = True
                 # manually construct the path for changepoints.h5
-                elif exists(join(progress_vars['pca_dirname'], progress_vars[key] + '.h5')):
+                elif exists(
+                    join(progress_vars["pca_dirname"], progress_vars[key] + ".h5")
+                ):
                     pca_progress[key] = True
             else:
                 if exists(progress_vars[key]):
@@ -416,7 +462,8 @@ def get_pca_progress(progress_vars, pca_progress):
 
     return pca_progress
 
-def get_extraction_progress(base_dir, exts=['dat', 'mkv', 'avi']):
+
+def get_extraction_progress(base_dir, exts=["dat", "mkv", "avi"]):
     """
     Count the number of fully extracted sessions, and print the session directory names of the incomplete or missing extractions.
 
@@ -437,20 +484,20 @@ def get_extraction_progress(base_dir, exts=['dat', 'mkv', 'avi']):
     for k, v in path_dict.items():
         extracted_path = e_path_dict.get(k, v)
         extracted = False
-        if '.mp4' in extracted_path:
-            yaml_path = extracted_path.replace('mp4', 'yaml')
+        if ".mp4" in extracted_path:
+            yaml_path = extracted_path.replace("mp4", "yaml")
             if check_completion_status(yaml_path):
                 extracted = True
                 num_extracted += 1
             else:
-                print(f'Extraction {k} is listed as incomplete.')
+                print(f"Extraction {k} is listed as incomplete.")
         if not extracted:
-            print('Not yet extracted:', k)
+            print("Not yet extracted:", k)
 
     return path_dict, num_extracted
 
 
-def print_progress(base_dir, progress_vars, exts=['dat', 'mkv', 'avi']):
+def print_progress(base_dir, progress_vars, exts=["dat", "mkv", "avi"]):
     """
     Search for all the paths included in the progress file and displays 4 progress bars, one for each pipeline step.
 
@@ -459,12 +506,14 @@ def print_progress(base_dir, progress_vars, exts=['dat', 'mkv', 'avi']):
     progress_vars (dict): notebook progress dict
     """
 
-    pca_progress = {'pca_dirname': False,
-                    'scores_path': False,
-                    'changepoints_path': False,
-                    'index_file': False}
+    pca_progress = {
+        "pca_dirname": False,
+        "scores_path": False,
+        "changepoints_path": False,
+        "index_file": False,
+    }
 
-    modeling_progress = {'base_model_path': False}
+    modeling_progress = {"base_model_path": False}
 
     # Get Extract Progress
     path_dict, num_extracted = get_extraction_progress(base_dir, exts=exts)
@@ -473,25 +522,30 @@ def print_progress(base_dir, progress_vars, exts=['dat', 'mkv', 'avi']):
     pca_progress = get_pca_progress(progress_vars, pca_progress)
 
     # Get Modeling Path
-    if progress_vars.get('base_model_path'):
-        base_model_path = progress_vars.get('base_model_path')
+    if progress_vars.get("base_model_path"):
+        base_model_path = progress_vars.get("base_model_path")
         if exists(base_model_path):
-            modeling_progress['model_path'] = True
-            model_num = len(glob(join(base_model_path, '*.p')))
+            modeling_progress["model_path"] = True
+            model_num = len(glob(join(base_model_path, "*.p")))
 
-    print(f'Extraction Progress: {num_extracted} out of {len(path_dict)} session(s) extracted')
+    print(
+        f"Extraction Progress: {num_extracted} out of {len(path_dict)} session(s) extracted"
+    )
 
-    info_print = f'PCA Progress: {sum(pca_progress.values())} out of {len(pca_progress)} items finished'
+    info_print = f"PCA Progress: {sum(pca_progress.values())} out of {len(pca_progress)} items finished"
     if sum(pca_progress.values()) == len(pca_progress):
         _items = ", ".join(key for key, v in pca_progress.items() if not v)
-        append_print = f': {_items} left'
+        append_print = f": {_items} left"
         info_print += append_print
     print(info_print)
 
-    if modeling_progress.get('model_path'):
-        print(f'Found {model_num} model(s)')
+    if modeling_progress.get("model_path"):
+        print(f"Found {model_num} model(s)")
 
-def check_progress(progress_filepath=abspath('./progress.yaml'), exts=['dat', 'mkv', 'avi', 'tar.gz']):
+
+def check_progress(
+    progress_filepath=abspath("./progress.yaml"), exts=["dat", "mkv", "avi", "tar.gz"]
+):
     """
     Check whether progress file exists and prompt user input on whether to overwrite, load old, or generate a new one.
 
@@ -504,11 +558,12 @@ def check_progress(progress_filepath=abspath('./progress.yaml'), exts=['dat', 'm
     if exists(progress_filepath):
         progress_vars = read_yaml(progress_filepath)
 
-        print('Found progress file, displaying progress...\n')
+        print("Found progress file, displaying progress...\n")
         # Display progress bars
-        print_progress(progress_vars['base_dir'], progress_vars, exts=exts)
+        print_progress(progress_vars["base_dir"], progress_vars, exts=exts)
 
-def progress_path_sanity_check(progress_paths, progress_filepath='./progress.yaml'):
+
+def progress_path_sanity_check(progress_paths, progress_filepath="./progress.yaml"):
     """
     check whether all relevant paths are correct in the progress file.
 
@@ -517,18 +572,38 @@ def progress_path_sanity_check(progress_paths, progress_filepath='./progress.yam
         progress_filepath (str, optional): path to progress.yaml file. Defaults to './progress.yaml'.
     """
     # necessary paths to check for the analysis pipeline
-    must_have_paths = ['base_dir', 'config_file', 'index_file', 'train_data_dir', 'pca_dirname', 
-                       'scores_filename', 'scores_path', 'changepoints_path']
-    
+    must_have_paths = [
+        "base_dir",
+        "config_file",
+        "index_file",
+        "train_data_dir",
+        "pca_dirname",
+        "scores_filename",
+        "scores_path",
+        "changepoints_path",
+    ]
+
     # keywords that should be in the paths
-    keywords = [abspath(dirname(progress_filepath)), 'config.yaml', 'moseq2-index.yaml', 'aggregate_results', '_pca',
-            'pca_scores','pca_scores.h5', 'changepoints']
+    keywords = [
+        abspath(dirname(progress_filepath)),
+        "config.yaml",
+        "moseq2-index.yaml",
+        "aggregate_results",
+        "_pca",
+        "pca_scores",
+        "pca_scores.h5",
+        "changepoints",
+    ]
     # zip the necessary paths and keywords for checking
     must_have_paths = dict(zip(must_have_paths, keywords))
 
     # sanity check for discrepancies
     for key, value in must_have_paths.items():
-        if value not in progress_paths.get(key, ''):
-            print(f'Please check and correct the path in {key}. The default path should contain {value}')
-            print('File names are not default values, please check if this is intentional')
-            print('=' * 20)
+        if value not in progress_paths.get(key, ""):
+            print(
+                f"Please check and correct the path in {key}. The default path should contain {value}"
+            )
+            print(
+                "File names are not default values, please check if this is intentional"
+            )
+            print("=" * 20)

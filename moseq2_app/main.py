@@ -1,6 +1,7 @@
 """
 Main functions that facilitate all jupyter notebook functionality.
 """
+
 from os.path import exists
 import ipywidgets as widgets
 from IPython.display import display
@@ -12,11 +13,15 @@ from moseq2_app.scalars.controller import InteractiveScalarViewer
 from moseq2_app.stat.controller import InteractiveSyllableStats
 from moseq2_app.stat.view import plot_dendrogram
 from moseq2_app.roi.controller import InteractiveExtractionViewer
-from moseq2_app.gui.wrappers import validate_extractions_wrapper, \
-    interactive_syllable_labeler_wrapper, interactive_crowd_movie_comparison_preview_wrapper, \
-    interactive_plot_transition_graph_wrapper
+from moseq2_app.gui.wrappers import (
+    validate_extractions_wrapper,
+    interactive_syllable_labeler_wrapper,
+    interactive_crowd_movie_comparison_preview_wrapper,
+    interactive_plot_transition_graph_wrapper,
+)
 
 output_notebook()
+
 
 def validate_inputs(inputs, progress_paths):
     """validate progress file input.
@@ -33,7 +38,7 @@ def validate_inputs(inputs, progress_paths):
     for i in inputs:
         if not exists(progress_paths[i]):
             error = True
-            print(f'ERROR: {i} not found.')
+            print(f"ERROR: {i} not found.")
 
     return error
 
@@ -52,18 +57,19 @@ def view_extraction(extractions, default=0):
     """
 
     if len(extractions) == 0:
-        print('no sessions to view')
+        print("no sessions to view")
         return []
 
     if default < 0:
         for i, sess in enumerate(extractions):
-            print(f'[{str(i + 1)}] {sess}')
+            print(f"[{str(i + 1)}] {sess}")
         extractions = get_selected_sessions(extractions, False)
     else:
         print(f"Displaying {extractions[default]}")
         return [extractions[default]]
 
     return extractions
+
 
 @filter_warnings
 def preview_extractions(input_dir, flipped=False):
@@ -78,9 +84,11 @@ def preview_extractions(input_dir, flipped=False):
     viewer = InteractiveExtractionViewer(data_path=input_dir, flipped=flipped)
 
     # Run interactive application
-    selout = widgets.interactive_output(viewer.get_extraction,
-                                        {'input_file': viewer.sess_select})
+    selout = widgets.interactive_output(
+        viewer.get_extraction, {"input_file": viewer.sess_select}
+    )
     display(viewer.clear_button, viewer.sess_select, selout)
+
 
 @filter_warnings
 def validate_extractions(input_dir):
@@ -92,6 +100,7 @@ def validate_extractions(input_dir):
     """
 
     validate_extractions_wrapper(input_dir)
+
 
 @filter_warnings
 def interactive_group_setting(index_file):
@@ -110,6 +119,7 @@ def interactive_group_setting(index_file):
 
     return index_grid
 
+
 @filter_warnings
 def interactive_scalar_summary(index_file):
     """
@@ -120,14 +130,23 @@ def interactive_scalar_summary(index_file):
     """
 
     if not exists(index_file):
-        print('Index file does not exist. Input path to an existing file and run the function again.')
+        print(
+            "Index file does not exist. Input path to an existing file and run the function again."
+        )
         return
 
     viewer = InteractiveScalarViewer(index_file)
     return viewer
 
+
 @filter_warnings
-def label_syllables(progress_paths, max_syllables=None, n_explained=99, select_median_duration_instances=False, max_examples=20):
+def label_syllables(
+    progress_paths,
+    max_syllables=None,
+    n_explained=99,
+    select_median_duration_instances=False,
+    max_examples=20,
+):
     """
     launch Interactive syllable labeling tool.
 
@@ -138,23 +157,33 @@ def label_syllables(progress_paths, max_syllables=None, n_explained=99, select_m
     """
 
     # Get proper input paths
-    model_path = progress_paths['model_path']
-    config_file = progress_paths['config_file']
-    index_file = progress_paths['index_file']
-    crowd_dir = progress_paths['crowd_dir']
-    syll_info_path = progress_paths['syll_info']
-    fig_dir = progress_paths['plot_path']
+    model_path = progress_paths["model_path"]
+    config_file = progress_paths["config_file"]
+    index_file = progress_paths["index_file"]
+    crowd_dir = progress_paths["crowd_dir"]
+    syll_info_path = progress_paths["syll_info"]
+    fig_dir = progress_paths["plot_path"]
 
-    inputs = ['model_path', 'config_file', 'index_file']
+    inputs = ["model_path", "config_file", "index_file"]
 
     if validate_inputs(inputs, progress_paths):
-        print('Set the correct paths to the missing variables and run the function again.')
+        print(
+            "Set the correct paths to the missing variables and run the function again."
+        )
         return
 
-    max_sylls = interactive_syllable_labeler_wrapper(model_path, config_file,
-                                         index_file, crowd_dir, syll_info_path, fig_dir,
-                                         max_syllables=max_syllables, n_explained=n_explained, 
-                                         select_median_duration_instances=select_median_duration_instances, max_examples=max_examples)
+    max_sylls = interactive_syllable_labeler_wrapper(
+        model_path,
+        config_file,
+        index_file,
+        crowd_dir,
+        syll_info_path,
+        fig_dir,
+        max_syllables=max_syllables,
+        n_explained=n_explained,
+        select_median_duration_instances=select_median_duration_instances,
+        max_examples=max_examples,
+    )
     return max_sylls
 
 
@@ -170,13 +199,20 @@ def show_dendrogram(progress_paths, max_syllable=None, color_by_cluster=False):
     """
 
     # get input paths
-    index_file = progress_paths['index_file'] # Path to index file.
-    model_path = progress_paths['model_path'] # Path to trained model file.
-    syll_info_path = progress_paths['syll_info'] # Path to syllable information file.
-    save_dir = progress_paths['plot_path']
+    index_file = progress_paths["index_file"]  # Path to index file.
+    model_path = progress_paths["model_path"]  # Path to trained model file.
+    syll_info_path = progress_paths["syll_info"]  # Path to syllable information file.
+    save_dir = progress_paths["plot_path"]
 
-    plot_dendrogram(index_file=index_file, model_path=model_path, syll_info_path=syll_info_path, 
-                    save_dir=save_dir, max_syllable=max_syllable, color_by_cluster=color_by_cluster)
+    plot_dendrogram(
+        index_file=index_file,
+        model_path=model_path,
+        syll_info_path=syll_info_path,
+        save_dir=save_dir,
+        max_syllable=max_syllable,
+        color_by_cluster=color_by_cluster,
+    )
+
 
 @filter_warnings
 def interactive_syllable_stats(progress_paths, max_syllable=None, load_parquet=False):
@@ -190,27 +226,40 @@ def interactive_syllable_stats(progress_paths, max_syllable=None, load_parquet=F
     """
 
     # Get proper input parameters
-    index_file = progress_paths['index_file'] # Path to index file.
-    model_path = progress_paths['model_path'] # Path to trained model file.
-    syll_info_path = progress_paths['syll_info'] # Path to syllable information file.
-    syll_info_df_path = progress_paths['df_info_path'] # relevant data frame for plotting and stats
+    index_file = progress_paths["index_file"]  # Path to index file.
+    model_path = progress_paths["model_path"]  # Path to trained model file.
+    syll_info_path = progress_paths["syll_info"]  # Path to syllable information file.
+    syll_info_df_path = progress_paths[
+        "df_info_path"
+    ]  # relevant data frame for plotting and stats
 
-    inputs = ['model_path', 'index_file', 'syll_info']
+    inputs = ["model_path", "index_file", "syll_info"]
 
     error = validate_inputs(inputs, progress_paths)
 
     if error:
-        print('Set the correct paths to the missing variables and run the function again.')
+        print(
+            "Set the correct paths to the missing variables and run the function again."
+        )
         return
 
     # Initialize the statistical grapher context
-    istat = InteractiveSyllableStats(index_path=index_file, model_path=model_path, df_path=syll_info_df_path,
-                                     info_path=syll_info_path, max_sylls=max_syllable, load_parquet=load_parquet)
+    istat = InteractiveSyllableStats(
+        index_path=index_file,
+        model_path=model_path,
+        df_path=syll_info_df_path,
+        info_path=syll_info_path,
+        max_sylls=max_syllable,
+        load_parquet=load_parquet,
+    )
 
     display(istat.clear_button, istat.stat_widget_box, istat.out)
 
+
 @filter_warnings
-def interactive_crowd_movie_comparison(progress_paths, group_movie_dir, get_pdfs=True, load_parquet=False):
+def interactive_crowd_movie_comparison(
+    progress_paths, group_movie_dir, get_pdfs=True, load_parquet=False
+):
     """
     launch interactive crowd movie/position heatmap comparison function
 
@@ -222,26 +271,38 @@ def interactive_crowd_movie_comparison(progress_paths, group_movie_dir, get_pdfs
     """
 
     # Get proper input paths
-    model_path = progress_paths['model_path']
-    config_file = progress_paths['config_file']
-    index_file = progress_paths['index_file']
-    syll_info_path = progress_paths['syll_info']
-    syll_info_df_path = progress_paths['df_info_path']
+    model_path = progress_paths["model_path"]
+    config_file = progress_paths["config_file"]
+    index_file = progress_paths["index_file"]
+    syll_info_path = progress_paths["syll_info"]
+    syll_info_df_path = progress_paths["df_info_path"]
 
-    inputs = ['model_path', 'config_file', 'index_file', 'syll_info']
+    inputs = ["model_path", "config_file", "index_file", "syll_info"]
 
     error = validate_inputs(inputs, progress_paths)
 
     if error:
-        print('Set the correct paths to the missing variables and run the function again.')
+        print(
+            "Set the correct paths to the missing variables and run the function again."
+        )
         return
 
-    interactive_crowd_movie_comparison_preview_wrapper(config_file, index_file, model_path,
-                                               syll_info_path, group_movie_dir, syll_info_df_path,
-                                               get_pdfs=get_pdfs, load_parquet=load_parquet)
+    interactive_crowd_movie_comparison_preview_wrapper(
+        config_file,
+        index_file,
+        model_path,
+        syll_info_path,
+        group_movie_dir,
+        syll_info_df_path,
+        get_pdfs=get_pdfs,
+        load_parquet=load_parquet,
+    )
+
 
 @filter_warnings
-def interactive_transition_graph(progress_paths, max_syllables=None, plot_vertically=False, load_parquet=False):
+def interactive_transition_graph(
+    progress_paths, max_syllables=None, plot_vertically=False, load_parquet=False
+):
     """
     Display group transition graphs with a configurable number of syllables.
 
@@ -252,23 +313,27 @@ def interactive_transition_graph(progress_paths, max_syllables=None, plot_vertic
     """
 
     # Get proper input paths
-    model_path = progress_paths['model_path']
-    index_file = progress_paths['index_file']
-    syll_info_path = progress_paths['syll_info']
-    syll_info_df_path = progress_paths['df_info_path']
+    model_path = progress_paths["model_path"]
+    index_file = progress_paths["index_file"]
+    syll_info_path = progress_paths["syll_info"]
+    syll_info_df_path = progress_paths["df_info_path"]
 
-    inputs = ['model_path', 'index_file', 'syll_info']
+    inputs = ["model_path", "index_file", "syll_info"]
 
     error = validate_inputs(inputs, progress_paths)
-    
+
     if error:
-        print('Set the correct paths to the missing variables and run the function again.')
+        print(
+            "Set the correct paths to the missing variables and run the function again."
+        )
         return
 
-    interactive_plot_transition_graph_wrapper(model_path,
-                                              index_file,
-                                              syll_info_path,
-                                              syll_info_df_path,
-                                              max_syllables=max_syllables,
-                                              load_parquet=load_parquet,
-                                              plot_vertically=plot_vertically)
+    interactive_plot_transition_graph_wrapper(
+        model_path,
+        index_file,
+        syll_info_path,
+        syll_info_df_path,
+        max_syllables=max_syllables,
+        load_parquet=load_parquet,
+        plot_vertically=plot_vertically,
+    )

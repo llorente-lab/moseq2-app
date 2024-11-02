@@ -20,8 +20,22 @@ from bokeh.transform import linear_cmap
 from bokeh.models.tickers import FixedTicker
 from bokeh.plotting import figure, show, from_networkx
 from moseq2_app.stat.widgets import SyllableStatBokehCallbacks
-from bokeh.models import (ColumnDataSource, LabelSet, BoxSelectTool, Circle, ColorBar, RangeSlider, CustomJS, TextInput,
-                          Legend, LegendItem, HoverTool, MultiLine, NodesAndLinkedEdges, TapTool)
+from bokeh.models import (
+    ColumnDataSource,
+    LabelSet,
+    BoxSelectTool,
+    Circle,
+    ColorBar,
+    RangeSlider,
+    CustomJS,
+    TextInput,
+    Legend,
+    LegendItem,
+    HoverTool,
+    MultiLine,
+    NodesAndLinkedEdges,
+    TapTool,
+)
 from moseq2_viz.util import get_sorted_index, read_yaml
 from scipy.cluster.hierarchy import linkage, dendrogram
 from scipy.spatial.distance import squareform
@@ -43,7 +57,7 @@ def colorscale(hexstr, scalefactor):
     #4F75D2
     """
 
-    hexstr = hexstr.strip('#')
+    hexstr = hexstr.strip("#")
 
     if scalefactor < 0 or len(hexstr) != 6:
         return hexstr
@@ -52,6 +66,7 @@ def colorscale(hexstr, scalefactor):
     rgb = tuple(int(max(min(x * scalefactor, 255), 0)) for x in rgb)
 
     return "#%02x%02x%02x" % rgb
+
 
 def get_ci_vect_vectorized(x, n_boots=10000, n_samp=None, function=np.nanmean, pct=5):
     """
@@ -79,10 +94,11 @@ def get_ci_vect_vectorized(x, n_boots=10000, n_samp=None, function=np.nanmean, p
     percentile = np.percentile(boots, [pct, 100 - pct])
     return percentile
 
+
 def setup_syllable_search(src_dict, err_dict, err_source, searchbox, circle, line):
     """
     Initializes the CustomJS script callback function used to update the plot upon changing the value of the TextInput.
-  
+
     Args:
     src_dict (dict): dict object containing all the stats information contained in the main ColumnDataSource.
     err_dict (dict): dict object containing all the error margins for the src_dict statistics.
@@ -99,12 +115,23 @@ def setup_syllable_search(src_dict, err_dict, err_source, searchbox, circle, lin
     js_cbs = SyllableStatBokehCallbacks(condition=js_condition)
 
     callback = CustomJS(
-        args=dict(source=circle.data_source, err_source=err_source, searchbox=searchbox,
-                  data=src_dict, err_data=err_dict, line=line), code=js_cbs.code)
+        args=dict(
+            source=circle.data_source,
+            err_source=err_source,
+            searchbox=searchbox,
+            data=src_dict,
+            err_data=err_dict,
+            line=line,
+        ),
+        code=js_cbs.code,
+    )
 
     return callback
 
-def setup_slider(src_dict, err_dict, err_source, slider, circle, line, thresh_stat='usage'):
+
+def setup_slider(
+    src_dict, err_dict, err_source, slider, circle, line, thresh_stat="usage"
+):
     """
     Initializes the CustomJS script callback function used to update the plot upon changing the value of the RangeSlider.
 
@@ -123,23 +150,32 @@ def setup_slider(src_dict, err_dict, err_source, slider, circle, line, thresh_st
 
     # map the dropdown values back to datasource names to retrieve in the javascript callback function
     dict_mapping = {
-        'usage': 'usage',
-        'duration': 'duration',
-        'velocity_2d_mm_mean': 'speed_2d',
-        'velocity_3d_mm_mean': 'speed_3d',
-        'height_ave_mm_mean': 'height',
-        'dist_to_center_px_mean': 'dist_to_center'
+        "usage": "usage",
+        "duration": "duration",
+        "velocity_2d_mm_mean": "speed_2d",
+        "velocity_3d_mm_mean": "speed_3d",
+        "height_ave_mm_mean": "height",
+        "dist_to_center_px_mean": "dist_to_center",
     }
 
     js_condition = """if((data[thresh_stat][i] >= slider.value[0]) && (data[thresh_stat][i] <= slider.value[1])) {\n"""
     js_cbs = SyllableStatBokehCallbacks(condition=js_condition)
 
     callback = CustomJS(
-        args=dict(source=circle.data_source, err_source=err_source,
-                  data=src_dict, err_data=err_dict, thresh_stat=dict_mapping[thresh_stat],
-                  slider=slider, line=line), code=js_cbs.code)
+        args=dict(
+            source=circle.data_source,
+            err_source=err_source,
+            data=src_dict,
+            err_data=err_dict,
+            thresh_stat=dict_mapping[thresh_stat],
+            slider=slider,
+            line=line,
+        ),
+        code=js_cbs.code,
+    )
 
     return callback
+
 
 def setup_hovertool(renderers, callback=None):
     """
@@ -152,7 +188,7 @@ def setup_hovertool(renderers, callback=None):
     Returns:
     hover (bokeh.models.HoverTool): hover tool to embed into the created figure.
     """
-    
+
     # html divs to display within the HoverTool
     tooltips = """
                 <div>
@@ -176,15 +212,20 @@ def setup_hovertool(renderers, callback=None):
                 </div>
                 """
 
-    hover = HoverTool(renderers=renderers,
-                      callback=callback,
-                      tooltips=tooltips,
-                      point_policy='snap_to_data',
-                      line_policy='nearest')
+    hover = HoverTool(
+        renderers=renderers,
+        callback=callback,
+        tooltips=tooltips,
+        point_policy="snap_to_data",
+        line_policy="nearest",
+    )
 
     return hover
 
-def get_aux_stat_dfs(df, group, sorting, groupby='group', errorbar='CI 95%', stat='usage'):
+
+def get_aux_stat_dfs(
+    df, group, sorting, groupby="group", errorbar="CI 95%", stat="usage"
+):
     """
     Compute the group-specific syllable statistics dataframe, and the selected error values to later draw the line plot and error bars.
 
@@ -203,33 +244,48 @@ def get_aux_stat_dfs(df, group, sorting, groupby='group', errorbar='CI 95%', sta
     errs_x (list): list of x-indices to plot the error bar lines within.
     errs_y (list): list of y-indices to plot the error bar lines within.
     """
-    
+
     # Get group specific dataframe indices
     df_group = df[df[groupby] == group]
-    grouped = df_group.groupby('syllable')[[stat]]
+    grouped = df_group.groupby("syllable")[[stat]]
 
     # Get resorted mean syllable data
-    aux_df = df_group.groupby('syllable', as_index=False).mean().reindex(sorting)
+    aux_df = df_group.groupby("syllable", as_index=False).mean().reindex(sorting)
 
     # Get SEM
-    if errorbar == 'CI 95%':
-        stat_err = df_group.groupby('syllable')[stat].apply(get_ci_vect_vectorized).reindex(sorting)
+    if errorbar == "CI 95%":
+        stat_err = (
+            df_group.groupby("syllable")[stat]
+            .apply(get_ci_vect_vectorized)
+            .reindex(sorting)
+        )
         aux_err = {}
-        for s in ['usage', 'duration', 'velocity_2d_mm_mean', 'velocity_3d_mm_mean', 'height_ave_mm_mean', 'dist_to_center_px_mean']:
-            aux_err[s] = df_group.groupby('syllable')[s].apply(get_ci_vect_vectorized).reindex(sorting)
-    elif errorbar == 'SEM':
+        for s in [
+            "usage",
+            "duration",
+            "velocity_2d_mm_mean",
+            "velocity_3d_mm_mean",
+            "height_ave_mm_mean",
+            "dist_to_center_px_mean",
+        ]:
+            aux_err[s] = (
+                df_group.groupby("syllable")[s]
+                .apply(get_ci_vect_vectorized)
+                .reindex(sorting)
+            )
+    elif errorbar == "SEM":
         stat_err = grouped.sem().reindex(sorting)
-        aux_err = df_group.groupby('syllable', as_index=False).sem().reindex(sorting)
+        aux_err = df_group.groupby("syllable", as_index=False).sem().reindex(sorting)
     else:
         stat_err = grouped.std().reindex(sorting)
-        aux_err = df_group.groupby('syllable', as_index=False).std().reindex(sorting)
+        aux_err = df_group.groupby("syllable", as_index=False).std().reindex(sorting)
 
     # Get min and max error bar values
-    if errorbar == 'CI 95%':
+    if errorbar == "CI 95%":
         miny = [e[0] for e in stat_err]
         maxy = [e[1] for e in stat_err]
     # miny, maxy is just y. Sorry, I have to do this to match the rest of the code
-    elif errorbar == 'None':
+    elif errorbar == "None":
         miny = aux_df[stat]
         maxy = aux_df[stat]
     else:
@@ -241,6 +297,7 @@ def get_aux_stat_dfs(df, group, sorting, groupby='group', errorbar='CI 95%', sta
     errs_y = [(min_y, max_y) for min_y, max_y in zip(miny, maxy)]
 
     return aux_df, stat_err, aux_err, errs_x, errs_y
+
 
 def get_syllable_info(df, sorting):
     """
@@ -257,22 +314,25 @@ def get_syllable_info(df, sorting):
     """
 
     # Get Labeled Syllable Information
-    info_columns = ['syllable', 'label', 'desc', 'crowd_movie_path']
-    desc_data = df.groupby(info_columns, as_index=False).mean()[info_columns].reindex(sorting)
+    info_columns = ["syllable", "label", "desc", "crowd_movie_path"]
+    desc_data = (
+        df.groupby(info_columns, as_index=False).mean()[info_columns].reindex(sorting)
+    )
 
     # Pack data into numpy arrays
-    labels = desc_data['label'].to_numpy()
-    desc = desc_data['desc'].to_numpy()
+    labels = desc_data["label"].to_numpy()
+    desc = desc_data["desc"].to_numpy()
 
     cm_paths = []
-    for cm in desc_data['crowd_movie_path'].to_numpy():
+    for cm in desc_data["crowd_movie_path"].to_numpy():
         try:
             cm_paths.append(cm)
         except ValueError:
             # cm path does not exist
-            cm_paths.append('')
+            cm_paths.append("")
 
     return labels, desc, cm_paths
+
 
 def get_datasources(aux_df, aux_sem, sem, labels, desc, cm_paths, errs_x, errs_y, stat):
     """
@@ -300,12 +360,12 @@ def get_datasources(aux_df, aux_sem, sem, labels, desc, cm_paths, errs_x, errs_y
     src_dict = dict(
         x=list(range(len(aux_df.index))),
         y=aux_df[stat].to_numpy(),
-        usage=aux_df['usage'].to_numpy(),
-        duration=aux_df['duration'].to_numpy(),
-        speed_2d=aux_df['velocity_2d_mm_mean'].to_numpy(),
-        speed_3d=aux_df['velocity_3d_mm_mean'].to_numpy(),
-        height=aux_df['height_ave_mm_mean'].to_numpy(),
-        dist_to_center=aux_df['dist_to_center_px_mean'].to_numpy(),
+        usage=aux_df["usage"].to_numpy(),
+        duration=aux_df["duration"].to_numpy(),
+        speed_2d=aux_df["velocity_2d_mm_mean"].to_numpy(),
+        speed_3d=aux_df["velocity_3d_mm_mean"].to_numpy(),
+        height=aux_df["height_ave_mm_mean"].to_numpy(),
+        dist_to_center=aux_df["dist_to_center_px_mean"].to_numpy(),
         sem=aux_sem[stat].to_numpy(),
         number=sem.index,
         label=labels,
@@ -318,12 +378,12 @@ def get_datasources(aux_df, aux_sem, sem, labels, desc, cm_paths, errs_x, errs_y
     err_dict = dict(
         x=errs_x,
         y=errs_y,
-        usage=aux_sem['usage'].to_numpy(),
-        duration=aux_sem['duration'].to_numpy(),
-        speed_2d=aux_sem['velocity_2d_mm_mean'].to_numpy(),
-        speed_3d=aux_sem['velocity_3d_mm_mean'].to_numpy(),
-        height=aux_sem['height_ave_mm_mean'].to_numpy(),
-        dist_to_center=aux_sem['dist_to_center_px_mean'].to_numpy(),
+        usage=aux_sem["usage"].to_numpy(),
+        duration=aux_sem["duration"].to_numpy(),
+        speed_2d=aux_sem["velocity_2d_mm_mean"].to_numpy(),
+        speed_3d=aux_sem["velocity_3d_mm_mean"].to_numpy(),
+        height=aux_sem["height_ave_mm_mean"].to_numpy(),
+        dist_to_center=aux_sem["dist_to_center_px_mean"].to_numpy(),
         sem=aux_sem[stat].to_numpy(),
         number=sem.index,
         label=labels,
@@ -334,7 +394,20 @@ def get_datasources(aux_df, aux_sem, sem, labels, desc, cm_paths, errs_x, errs_y
 
     return source, src_dict, err_source, err_dict
 
-def draw_stats(fig, df, groups, colors, sorting, groupby, stat, errorbar, line_dash='solid', thresh_stat='usage', sig_sylls=[]):
+
+def draw_stats(
+    fig,
+    df,
+    groups,
+    colors,
+    sorting,
+    groupby,
+    stat,
+    errorbar,
+    line_dash="solid",
+    thresh_stat="usage",
+    sig_sylls=[],
+):
     """
     iterate through the given DataFrame and plots the data grouped by specified column ('group', 'SessionName', 'SubjectName'), with the errorbars
 
@@ -352,24 +425,32 @@ def draw_stats(fig, df, groups, colors, sorting, groupby, stat, errorbar, line_d
     pickers (list of ColorPickers): List of interactive color picker widgets to update the graph colors.
     slider (bokeh.models.RangeSlider): RangeSlider object used to threshold/filter the displayed syllables.
     """
-    warnings.filterwarnings('ignore')
+    warnings.filterwarnings("ignore")
 
-    slider = RangeSlider(start=0, end=0.001, value=(0, 0.001), step=0.001,
-                         format="0[.]000", title=f"Display Syllables Within {thresh_stat} Range")
+    slider = RangeSlider(
+        start=0,
+        end=0.001,
+        value=(0, 0.001),
+        step=0.001,
+        format="0[.]000",
+        title=f"Display Syllables Within {thresh_stat} Range",
+    )
 
-    searchbox = TextInput(value='', title='Syllable to Display:')
+    searchbox = TextInput(value="", title="Syllable to Display:")
 
     for group, color in zip(groups, colors):
 
-        aux_df, sem, aux_sem, errs_x, errs_y = get_aux_stat_dfs(df, group, sorting, groupby, errorbar, stat)
+        aux_df, sem, aux_sem, errs_x, errs_y = get_aux_stat_dfs(
+            df, group, sorting, groupby, errorbar, stat
+        )
 
         # get syllable info
         labels, desc, cm_paths = get_syllable_info(df, sorting)
 
         # get bokeh data sources
-        source, src_dict, err_source, err_dict = get_datasources(aux_df, aux_sem, sem,
-                                                                 labels, desc, cm_paths,
-                                                                 errs_x, errs_y, stat)
+        source, src_dict, err_source, err_dict = get_datasources(
+            aux_df, aux_sem, sem, labels, desc, cm_paths, errs_x, errs_y, stat
+        )
 
         # adjust slider min-max values
         if aux_df[thresh_stat].max() > slider.end:
@@ -377,39 +458,84 @@ def draw_stats(fig, df, groups, colors, sorting, groupby, stat, errorbar, line_d
             slider.value = (0, slider.end)
 
         # Draw glyphs
-        line = fig.line('x', 'y', source=source, alpha=0.8, muted_alpha=0.1, line_dash=line_dash,
-                        legend_label=group, color=color)
-        circle = fig.circle('x', 'y', source=source, alpha=0.8, muted_alpha=0.1,
-                            legend_label=group, color=color, size=6)
+        line = fig.line(
+            "x",
+            "y",
+            source=source,
+            alpha=0.8,
+            muted_alpha=0.1,
+            line_dash=line_dash,
+            legend_label=group,
+            color=color,
+        )
+        circle = fig.circle(
+            "x",
+            "y",
+            source=source,
+            alpha=0.8,
+            muted_alpha=0.1,
+            legend_label=group,
+            color=color,
+            size=6,
+        )
 
         if len(sig_sylls) > 0:
             # displaying the diamonds under the x-axis
             y = [-1e-2 for _ in aux_df[stat].to_numpy()[sig_sylls]]
             # Draw stars instead of circles
-            fig.diamond_cross(sig_sylls, y, alpha=0.8, muted_alpha=0.1, legend_label='Significant Syllable',
-                              fill_color=color, line_width=3, line_color='red', size=10)
+            fig.diamond_cross(
+                sig_sylls,
+                y,
+                alpha=0.8,
+                muted_alpha=0.1,
+                legend_label="Significant Syllable",
+                fill_color=color,
+                line_width=3,
+                line_color="red",
+                size=10,
+            )
         else:
             # handle glyph being rendered upon dynamic reload; prevents "float value out of range" bokeh error.
-            fig.diamond_cross(sig_sylls, [], alpha=0.8, muted_alpha=0.1,
-                              fill_color=color, line_width=3, line_color='red', size=10)
+            fig.diamond_cross(
+                sig_sylls,
+                [],
+                alpha=0.8,
+                muted_alpha=0.1,
+                fill_color=color,
+                line_width=3,
+                line_color="red",
+                size=10,
+            )
 
-        error_bars = fig.multi_line('x', 'y', source=err_source, alpha=0.8,
-                                    muted_alpha=0.1, legend_label=group, color=color)
+        error_bars = fig.multi_line(
+            "x",
+            "y",
+            source=err_source,
+            alpha=0.8,
+            muted_alpha=0.1,
+            legend_label=group,
+            color=color,
+        )
 
         # setup searchbox callback function
         # callback function will allow user interaction to dynamically edit the circle.ColumnDataSource
-        search_callback = setup_syllable_search(src_dict, err_dict, err_source, searchbox, circle, line)
-        searchbox.js_on_change('value', search_callback)
+        search_callback = setup_syllable_search(
+            src_dict, err_dict, err_source, searchbox, circle, line
+        )
+        searchbox.js_on_change("value", search_callback)
 
         # setup slider callback function to update the plot
         # callback function will allow user interaction to dynamically edit the circle.ColumnDataSource
-        slider_callback = setup_slider(src_dict, err_dict, err_source, slider, circle, line, thresh_stat)
-        slider.js_on_change('value', slider_callback)
+        slider_callback = setup_slider(
+            src_dict, err_dict, err_source, slider, circle, line, thresh_stat
+        )
+        slider.js_on_change("value", slider_callback)
 
         # update hover tools to match the thresholded plot points
         hover = setup_hovertool([circle])
         fig.add_tools(hover)
     return slider, searchbox
+
 
 def set_grouping_colors(df, groupby):
     """
@@ -430,9 +556,9 @@ def set_grouping_colors(df, groupby):
     colors = itertools.cycle(palette)
 
     # Set grouping variable to plot separately
-    if groupby == 'group':
+    if groupby == "group":
         groups = list(df.group.unique())
-        group_colors = palette[:len(groups)]
+        group_colors = palette[: len(groups)]
     else:
         # find unique selections of the selected sessions from the widget
         groups = list(df[groupby].unique())
@@ -451,7 +577,7 @@ def set_grouping_colors(df, groupby):
 
         # When the user is trying to plot over 256 experiment groups at the same time
         if len(unique_group) > len(palette):
-            print('Too many groups to plot. Some colors may be resued')
+            print("Too many groups to plot. Some colors may be resued")
 
         # find a color for each group
         for group, index in color_map.items():
@@ -459,12 +585,13 @@ def set_grouping_colors(df, groupby):
                 color_map[group] = palette[index]
             # handle index error when the number of groups is greater than the number of colors in the palette
             except IndexError:
-                print('Not enough color groups in the pallette')
+                print("Not enough color groups in the pallette")
                 # set color index to the last item in palette to reuse color
                 color_map[group] = palette[-1]
         group_colors = list(color_map.values())
         colors = [colorscale(color_map[sg], random.uniform(0, 2)) for sg in sess_groups]
     return groups, group_colors, colors
+
 
 def format_stat_plot(p, df, searchbox, slider, sorting):
     """
@@ -484,11 +611,14 @@ def format_stat_plot(p, df, searchbox, slider, sorting):
     """
 
     # Get xtick labels
-    label_df = df.groupby(['syllable', 'label'], as_index=False).mean().reindex(sorting)
+    label_df = df.groupby(["syllable", "label"], as_index=False).mean().reindex(sorting)
 
-    xtick_numbers = list(label_df['syllable'])
-    xtick_labels = list(label_df['label'])
-    xticks = [f'{lbl} - {num}' if len(lbl) > 0 else f'{num}' for num, lbl in zip(xtick_numbers, xtick_labels)]
+    xtick_numbers = list(label_df["syllable"])
+    xtick_labels = list(label_df["label"])
+    xticks = [
+        f"{lbl} - {num}" if len(lbl) > 0 else f"{num}"
+        for num, lbl in zip(xtick_numbers, xtick_labels)
+    ]
 
     # Setting dynamics xticks
     p.xaxis.ticker = FixedTicker(ticks=list(sorting))
@@ -508,8 +638,19 @@ def format_stat_plot(p, df, searchbox, slider, sorting):
 
     return graph_n_pickers
 
-def bokeh_plotting(df, stat, sorting, mean_df=None, groupby='group', errorbar='SEM',
-                   syllable_families=None, sort_name='usage', thresh='usage', sig_sylls=[]):
+
+def bokeh_plotting(
+    df,
+    stat,
+    sorting,
+    mean_df=None,
+    groupby="group",
+    errorbar="SEM",
+    syllable_families=None,
+    sort_name="usage",
+    thresh="usage",
+    sig_sylls=[],
+):
     """
     Generate a Bokeh plot with interactive tools such as the HoverTool
 
@@ -526,27 +667,51 @@ def bokeh_plotting(df, stat, sorting, mean_df=None, groupby='group', errorbar='S
     p (bokeh figure): Displayed stat plot with optional color pickers.
     """
 
-    tools = 'pan, box_zoom, wheel_zoom, save, reset'
+    tools = "pan, box_zoom, wheel_zoom, save, reset"
 
     # Instantiate Bokeh figure with the HoverTool data
-    p = figure(title=f'Syllable {stat} Statistics - Sorted by {sort_name}',
-               width=850,
-               height=500,
-               tools=tools,
-               x_axis_label='Syllables',
-               y_axis_label=f'{stat}',
-               output_backend="svg")
+    p = figure(
+        title=f"Syllable {stat} Statistics - Sorted by {sort_name}",
+        width=850,
+        height=500,
+        tools=tools,
+        x_axis_label="Syllables",
+        y_axis_label=f"{stat}",
+        output_backend="svg",
+    )
 
     # get default colors to display each group's line plots
     groups, group_colors, colors = set_grouping_colors(df, groupby)
 
-    if groupby != 'group':
+    if groupby != "group":
         # draw session based statistics, without returning individual bokeh widgets to display
-        draw_stats(p, mean_df, list(df.group.unique()), group_colors, sorting, 'group',
-                   stat, errorbar, line_dash='dashed', thresh_stat=thresh, sig_sylls=sig_sylls)
+        draw_stats(
+            p,
+            mean_df,
+            list(df.group.unique()),
+            group_colors,
+            sorting,
+            "group",
+            stat,
+            errorbar,
+            line_dash="dashed",
+            thresh_stat=thresh,
+            sig_sylls=sig_sylls,
+        )
 
     # draw line plots, setup hovertool, thresholding slider and group color pickers
-    slider, searchbox = draw_stats(p, df, groups, colors, sorting, groupby, stat, errorbar, thresh_stat=thresh, sig_sylls=sig_sylls)
+    slider, searchbox = draw_stats(
+        p,
+        df,
+        groups,
+        colors,
+        sorting,
+        groupby,
+        stat,
+        errorbar,
+        thresh_stat=thresh,
+        sig_sylls=sig_sylls,
+    )
 
     # Format Bokeh plot with widgets
     graph_n_pickers = format_stat_plot(p, df, searchbox, slider, sorting)
@@ -555,6 +720,7 @@ def bokeh_plotting(df, stat, sorting, mean_df=None, groupby='group', errorbar='S
     show(graph_n_pickers)
 
     return p
+
 
 def format_graphs(graphs, group):
     """
@@ -603,6 +769,7 @@ def format_graphs(graphs, group):
 
     return list(group_grid)
 
+
 def get_neighbors(graph, node_indices, group_name):
     """
     Compute the previous and next states for each node in the graph, and the corresponding edge colors.
@@ -631,14 +798,14 @@ def get_neighbors(graph, node_indices, group_name):
             neighbors = np.array(list(graph.neighbors(n)))
 
             for p in pred:
-                neighbor_edge_colors[(p, n)] = 'orange'
+                neighbor_edge_colors[(p, n)] = "orange"
 
             for nn in neighbors:
-                neighbor_edge_colors[(n, nn)] = 'purple'
+                neighbor_edge_colors[(n, nn)] = "purple"
 
             # Get predecessor and next state transition weights
-            pred_weights = [graph.edges()[(p, n)]['weight'] for p in pred]
-            next_weights = [graph.edges()[(n, p)]['weight'] for p in neighbors]
+            pred_weights = [graph.edges()[(p, n)]["weight"] for p in pred]
+            next_weights = [graph.edges()[(n, p)]["weight"] for p in neighbors]
 
             # Get descending order of weights
             pred_sort_idx = np.argsort(pred_weights)[::-1]
@@ -650,17 +817,18 @@ def get_neighbors(graph, node_indices, group_name):
 
         except nx.NetworkXError:
             # handle orphans
-            print('missing', group_name, n)
+            print("missing", group_name, n)
             pass
 
     # correct colors for edges where the transition is both incoming and outgoing
     for k, v in neighbor_edge_colors.items():
         k1 = k[::-1]
         if k1 in neighbor_edge_colors:
-            neighbor_edge_colors[k] = 'green'
-            neighbor_edge_colors[k1] = 'green'
+            neighbor_edge_colors[k] = "green"
+            neighbor_edge_colors[k1] = "green"
 
     return prev_states, next_states, neighbor_edge_colors
+
 
 def format_plot(plot):
     """
@@ -676,8 +844,13 @@ def format_plot(plot):
     plot.yaxis.major_tick_line_color = None  # turn off y-axis major ticks
     plot.yaxis.minor_tick_line_color = None  # turn off y-axis minor ticks
 
-    plot.xaxis.major_label_text_color = None  # turn off x-axis tick labels leaving space
-    plot.yaxis.major_label_text_color = None  # turn off y-axis tick labels leaving space
+    plot.xaxis.major_label_text_color = (
+        None  # turn off x-axis tick labels leaving space
+    )
+    plot.yaxis.major_label_text_color = (
+        None  # turn off y-axis tick labels leaving space
+    )
+
 
 def get_minmax_tp(edge_width, diff=False):
     """
@@ -720,6 +893,7 @@ def get_minmax_tp(edge_width, diff=False):
 
         return min_down_tp, max_down_tp, min_up_tp, max_up_tp
 
+
 def get_difference_legend_items(plot, edge_width, group_name):
     """
     Create the difference graph legend items with the min and max transition probabilities for both the up and down-regulated transition probabilities.
@@ -733,21 +907,23 @@ def get_difference_legend_items(plot, edge_width, group_name):
     diff_items (list): List of LegendItem objects to display
     """
 
-    r_line = plot.line(line_color='red')
-    b_line = plot.line(line_color='blue')
+    r_line = plot.line(line_color="red")
+    b_line = plot.line(line_color="blue")
 
-    r_circle = plot.circle(line_color='red', fill_color='white')
-    b_circle = plot.circle(line_color='blue', fill_color='white')
+    r_circle = plot.circle(line_color="red", fill_color="white")
+    b_circle = plot.circle(line_color="blue", fill_color="white")
 
-    G1 = group_name.split('-')[0]
+    G1 = group_name.split("-")[0]
 
-    min_down_tp, max_down_tp, min_up_tp, max_up_tp = get_minmax_tp(edge_width, diff=True)
+    min_down_tp, max_down_tp, min_up_tp, max_up_tp = get_minmax_tp(
+        edge_width, diff=True
+    )
 
-    min_down_line = plot.line(line_color='red', line_width=min_down_tp * 350)
-    max_down_line = plot.line(line_color='red', line_width=max_down_tp * 350)
+    min_down_line = plot.line(line_color="red", line_width=min_down_tp * 350)
+    max_down_line = plot.line(line_color="red", line_width=max_down_tp * 350)
 
-    min_up_line = plot.line(line_color='blue', line_width=min_up_tp * 350)
-    max_up_line = plot.line(line_color='blue', line_width=max_up_tp * 350)
+    min_up_line = plot.line(line_color="blue", line_width=min_up_tp * 350)
+    max_up_line = plot.line(line_color="blue", line_width=max_up_tp * 350)
 
     diff_main_items = [
         LegendItem(label=f"Up-regulated Usage in {G1}", renderers=[b_circle]),
@@ -757,13 +933,26 @@ def get_difference_legend_items(plot, edge_width, group_name):
     ]
 
     diff_width_items = [
-        LegendItem(label=f"Min Up-regulated P(transition): {min_up_tp:.4f}", renderers=[min_up_line]),
-        LegendItem(label=f"Max Up-regulated P(transition): {max_up_tp:.4f}", renderers=[max_up_line]),
-        LegendItem(label=f"Min Down-regulated P(transition): {min_down_tp:.4f}", renderers=[min_down_line]),
-        LegendItem(label=f"Max Down-regulated P(transition): {max_down_tp:.4f}", renderers=[max_down_line]),
+        LegendItem(
+            label=f"Min Up-regulated P(transition): {min_up_tp:.4f}",
+            renderers=[min_up_line],
+        ),
+        LegendItem(
+            label=f"Max Up-regulated P(transition): {max_up_tp:.4f}",
+            renderers=[max_up_line],
+        ),
+        LegendItem(
+            label=f"Min Down-regulated P(transition): {min_down_tp:.4f}",
+            renderers=[min_down_line],
+        ),
+        LegendItem(
+            label=f"Max Down-regulated P(transition): {max_down_tp:.4f}",
+            renderers=[max_down_line],
+        ),
     ]
 
     return diff_main_items, diff_width_items
+
 
 def set_fill_color(scalar_color, data_dict):
     """
@@ -781,19 +970,21 @@ def set_fill_color(scalar_color, data_dict):
     empty = False
 
     for arr in data_dict.values():
-        if len(arr['values']) == 0:
+        if len(arr["values"]) == 0:
             empty = True
 
-    fill_color = 'white'
+    fill_color = "white"
 
     if not empty and scalar_color in data_dict:
-        fill_color = linear_cmap(data_dict[scalar_color]['key'],
-                                 "Spectral4",
-                                 0,
-                                 np.nanmax(data_dict[scalar_color]['values']))
-
+        fill_color = linear_cmap(
+            data_dict[scalar_color]["key"],
+            "Spectral4",
+            0,
+            np.nanmax(data_dict[scalar_color]["values"]),
+        )
 
     return fill_color, empty
+
 
 def setup_trans_graph_tooltips(plot):
     """
@@ -829,13 +1020,14 @@ def setup_trans_graph_tooltips(plot):
                 """
 
     # adding interactive tools
-    plot.add_tools(HoverTool(tooltips=tooltips, line_policy='interp'),
-                   TapTool(),
-                   BoxSelectTool())
+    plot.add_tools(
+        HoverTool(tooltips=tooltips, line_policy="interp"), TapTool(), BoxSelectTool()
+    )
+
 
 def format_trans_graph_edges(graph, neighbor_edge_colors, difference_graph=False):
     """
-    Compute the colors and widths of all the transition edges between nodes. 
+    Compute the colors and widths of all the transition edges between nodes.
 
     Args:
     graph (nx.DiGraph): networkx graph to read edge weights from and compute widths and colors with.
@@ -850,11 +1042,14 @@ def format_trans_graph_edges(graph, neighbor_edge_colors, difference_graph=False
 
     # edge colors for difference graphs
     if difference_graph:
-        edge_color = {e: 'blue' if graph.edges()[e]['weight'] > 0 else 'red' for e in graph.edges()}
-        edge_width = {e: abs(graph.edges()[e]['weight'] * 400) for e in graph.edges()}
+        edge_color = {
+            e: "blue" if graph.edges()[e]["weight"] > 0 else "red"
+            for e in graph.edges()
+        }
+        edge_width = {e: abs(graph.edges()[e]["weight"] * 400) for e in graph.edges()}
     else:
-        edge_color = {e: 'black' for e in graph.edges()}
-        edge_width = {e: graph.edges()[e]['weight'] * 250 for e in graph.edges()}
+        edge_color = {e: "black" for e in graph.edges()}
+        edge_width = {e: graph.edges()[e]["weight"] * 250 for e in graph.edges()}
 
     selected_edge_colors = {e: neighbor_edge_colors[e] for e in graph.edges()}
 
@@ -864,6 +1059,7 @@ def format_trans_graph_edges(graph, neighbor_edge_colors, difference_graph=False
     nx.set_edge_attributes(graph, edge_width, "edge_width")
 
     return edge_color, edge_width, selected_edge_colors
+
 
 def get_trans_graph_group_stats(node_indices, usages, scalars):
     """
@@ -880,32 +1076,41 @@ def get_trans_graph_group_stats(node_indices, usages, scalars):
 
     # get usages
     group_usage = [usages[j] for j in node_indices if j in usages]
-    group_duration = [scalars['duration'][j] for j in node_indices if j in scalars['duration']]
+    group_duration = [
+        scalars["duration"][j] for j in node_indices if j in scalars["duration"]
+    ]
 
     # get speeds
-    group_speed_2d = [scalars['speeds_2d'][j] for j in node_indices if j in scalars['speeds_2d']]
-    group_speed_3d = [scalars['speeds_3d'][j] for j in node_indices if j in scalars['speeds_3d']]
+    group_speed_2d = [
+        scalars["speeds_2d"][j] for j in node_indices if j in scalars["speeds_2d"]
+    ]
+    group_speed_3d = [
+        scalars["speeds_3d"][j] for j in node_indices if j in scalars["speeds_3d"]
+    ]
 
     # get average height
-    group_height = [scalars['heights'][j] for j in node_indices if j in scalars['heights']]
+    group_height = [
+        scalars["heights"][j] for j in node_indices if j in scalars["heights"]
+    ]
 
     # get mean distances to bucket centers
-    group_dist = [scalars['dists'][j] for j in node_indices if j in scalars['dists']]
+    group_dist = [scalars["dists"][j] for j in node_indices if j in scalars["dists"]]
 
     group_stats = {
-        'usage': np.nan_to_num(group_usage),
-        'duration': np.nan_to_num(group_duration),
-        'speed_2d': np.nan_to_num(group_speed_2d),
-        'speed_3d': np.nan_to_num(group_speed_3d),
-        'height': np.nan_to_num(group_height),
-        'dist': np.nan_to_num(group_dist)
+        "usage": np.nan_to_num(group_usage),
+        "duration": np.nan_to_num(group_duration),
+        "speed_2d": np.nan_to_num(group_speed_2d),
+        "speed_3d": np.nan_to_num(group_speed_3d),
+        "height": np.nan_to_num(group_height),
+        "dist": np.nan_to_num(group_dist),
     }
 
     return group_stats
 
+
 def set_node_colors_and_sizes(graph, usages, node_indices, difference_graph=False):
     """
-    Compute the colors and sizes of all the transition nodes. 
+    Compute the colors and sizes of all the transition nodes.
 
     Args:
     graph (nx.DiGraph): networkx graph to set the new node attributes to.
@@ -917,16 +1122,17 @@ def set_node_colors_and_sizes(graph, usages, node_indices, difference_graph=Fals
     # node colors for difference graphs
     # node size is likely related to node diameters from https://towardsdatascience.com/customizing-networkx-graphs-f80b4e69bedf
     if difference_graph:
-        node_color = {s: 'blue' if usages[s] > 0 else 'red' for s in node_indices}
-        node_size = {s: max(15., 15 + abs(usages[s] * 1000)) for s in node_indices}
-        
+        node_color = {s: "blue" if usages[s] > 0 else "red" for s in node_indices}
+        node_size = {s: max(15.0, 15 + abs(usages[s] * 1000)) for s in node_indices}
+
     else:
-        node_color = {s: 'red' for s in node_indices}
-        node_size = {s: max(15., abs(usages[s] * 1000)) for s in node_indices}
+        node_color = {s: "red" for s in node_indices}
+        node_size = {s: max(15.0, abs(usages[s] * 1000)) for s in node_indices}
 
     # setting node attributes
     nx.set_node_attributes(graph, node_color, "node_color")
     nx.set_node_attributes(graph, node_size, "node_size")
+
 
 def get_group_node_syllable_info(syll_info, node_indices):
     """
@@ -946,15 +1152,16 @@ def get_group_node_syllable_info(syll_info, node_indices):
     labels, descs, cm_paths = [], [], []
 
     for n in node_indices:
-        labels.append(syll_info[n]['label'])
-        descs.append(syll_info[n]['desc'])
+        labels.append(syll_info[n]["label"])
+        descs.append(syll_info[n]["desc"])
         try:
-            cm_paths.append(syll_info[n]['crowd_movie_path'])
+            cm_paths.append(syll_info[n]["crowd_movie_path"])
         except ValueError:
             # crowd movie path not found
-            cm_paths.append('')
+            cm_paths.append("")
 
     return labels, descs, cm_paths
+
 
 def setup_graph_hover_renderers(graph_renderer, group_stats, node_indices):
     """
@@ -970,22 +1177,25 @@ def setup_graph_hover_renderers(graph_renderer, group_stats, node_indices):
     """
 
     # setting common data source to display via HoverTool
-    graph_renderer.node_renderer.data_source.add(node_indices, 'number')
-    graph_renderer.node_renderer.data_source.add(group_stats['labels'], 'label')
-    graph_renderer.node_renderer.data_source.add(group_stats['descs'], 'desc')
-    graph_renderer.node_renderer.data_source.add(group_stats['cm_paths'], 'movies')
-    graph_renderer.node_renderer.data_source.add(group_stats['prev_states'], 'prev')
-    graph_renderer.node_renderer.data_source.add(group_stats['next_states'], 'next')
-    graph_renderer.node_renderer.data_source.add(group_stats['usage'], 'usage')
-    graph_renderer.node_renderer.data_source.add(group_stats['duration'], 'duration')
-    graph_renderer.node_renderer.data_source.add(group_stats['speed_2d'], 'speed_2d')
-    graph_renderer.node_renderer.data_source.add(group_stats['speed_3d'], 'speed_3d')
-    graph_renderer.node_renderer.data_source.add(group_stats['height'], 'height')
-    graph_renderer.node_renderer.data_source.add(group_stats['dist'], 'dist_to_center_px')
+    graph_renderer.node_renderer.data_source.add(node_indices, "number")
+    graph_renderer.node_renderer.data_source.add(group_stats["labels"], "label")
+    graph_renderer.node_renderer.data_source.add(group_stats["descs"], "desc")
+    graph_renderer.node_renderer.data_source.add(group_stats["cm_paths"], "movies")
+    graph_renderer.node_renderer.data_source.add(group_stats["prev_states"], "prev")
+    graph_renderer.node_renderer.data_source.add(group_stats["next_states"], "next")
+    graph_renderer.node_renderer.data_source.add(group_stats["usage"], "usage")
+    graph_renderer.node_renderer.data_source.add(group_stats["duration"], "duration")
+    graph_renderer.node_renderer.data_source.add(group_stats["speed_2d"], "speed_2d")
+    graph_renderer.node_renderer.data_source.add(group_stats["speed_3d"], "speed_3d")
+    graph_renderer.node_renderer.data_source.add(group_stats["height"], "height")
+    graph_renderer.node_renderer.data_source.add(
+        group_stats["dist"], "dist_to_center_px"
+    )
     # graph_renderer.node_renderer.data_source.add(group_stats['incoming_transition_entropy'], 'ent_in')
     # graph_renderer.node_renderer.data_source.add(group_stats['outgoing_transition_entropy'], 'ent_out')
 
     return graph_renderer
+
 
 def setup_node_and_edge_interactions(graph_renderer, group_stats, scalar_color):
     """
@@ -1002,11 +1212,14 @@ def setup_node_and_edge_interactions(graph_renderer, group_stats, scalar_color):
     """
 
     data_dict = {
-        '2D velocity': {'key': 'speed_2d', 'values': group_stats['speed_2d']},
-        '3D velocity': {'key': 'speed_3d', 'values': group_stats['speed_3d']},
-        'Duration': {'key': 'duration', 'values': group_stats['duration']},
-        'Height': {'key': 'height', 'values': group_stats['height']},
-        'Distance to Center': {'key': 'dist_to_center_px', 'values': group_stats['dist']},
+        "2D velocity": {"key": "speed_2d", "values": group_stats["speed_2d"]},
+        "3D velocity": {"key": "speed_3d", "values": group_stats["speed_3d"]},
+        "Duration": {"key": "duration", "values": group_stats["duration"]},
+        "Height": {"key": "height", "values": group_stats["height"]},
+        "Distance to Center": {
+            "key": "dist_to_center_px",
+            "values": group_stats["dist"],
+        },
         # 'Entropy-In': {'key': 'ent_in', 'values': np.nan_to_num(group_stats['incoming_transition_entropy'])},
         # 'Entropy-Out': {'key': 'ent_out', 'values': np.nan_to_num(group_stats['outgoing_transition_entropy'])},
     }
@@ -1015,33 +1228,53 @@ def setup_node_and_edge_interactions(graph_renderer, group_stats, scalar_color):
 
     # Get color bar if node colors are not white
     color_bar = None
-    if fill_color != 'white' and not empty:
-        color_bar = ColorBar(color_mapper=fill_color['transform'])
+    if fill_color != "white" and not empty:
+        color_bar = ColorBar(color_mapper=fill_color["transform"])
 
     # node interactions
-    graph_renderer.node_renderer.glyph = Circle(size='node_size', fill_color=fill_color, line_color='node_color')
-    graph_renderer.node_renderer.selection_glyph = Circle(size='node_size', line_color='node_color',
-                                                          fill_color=fill_color)
-    graph_renderer.node_renderer.nonselection_glyph = Circle(size='node_size', line_color='node_color',
-                                                             fill_color=fill_color)
-    graph_renderer.node_renderer.hover_glyph = Circle(size='node_size', fill_color=Spectral4[1])
+    graph_renderer.node_renderer.glyph = Circle(
+        size="node_size", fill_color=fill_color, line_color="node_color"
+    )
+    graph_renderer.node_renderer.selection_glyph = Circle(
+        size="node_size", line_color="node_color", fill_color=fill_color
+    )
+    graph_renderer.node_renderer.nonselection_glyph = Circle(
+        size="node_size", line_color="node_color", fill_color=fill_color
+    )
+    graph_renderer.node_renderer.hover_glyph = Circle(
+        size="node_size", fill_color=Spectral4[1]
+    )
 
     # edge interactions
-    graph_renderer.edge_renderer.glyph = MultiLine(line_color='edge_color', line_alpha=0.7,
-                                                   line_width='edge_width', line_join='miter')
-    graph_renderer.edge_renderer.selection_glyph = MultiLine(line_color='line_color', line_width='edge_width',
-                                                             line_join='miter', line_alpha=0.8, )
-    graph_renderer.edge_renderer.nonselection_glyph = MultiLine(line_color='edge_color', line_alpha=0.0,
-                                                                line_width='edge_width', line_join='miter')
+    graph_renderer.edge_renderer.glyph = MultiLine(
+        line_color="edge_color",
+        line_alpha=0.7,
+        line_width="edge_width",
+        line_join="miter",
+    )
+    graph_renderer.edge_renderer.selection_glyph = MultiLine(
+        line_color="line_color",
+        line_width="edge_width",
+        line_join="miter",
+        line_alpha=0.8,
+    )
+    graph_renderer.edge_renderer.nonselection_glyph = MultiLine(
+        line_color="edge_color",
+        line_alpha=0.0,
+        line_width="edge_width",
+        line_join="miter",
+    )
     ## Change line color to match difference colors
-    graph_renderer.edge_renderer.hover_glyph = MultiLine(line_color='line_color', line_width=5,
-                                                         line_join='miter', line_alpha=0.8)
+    graph_renderer.edge_renderer.hover_glyph = MultiLine(
+        line_color="line_color", line_width=5, line_join="miter", line_alpha=0.8
+    )
 
     # selection policies
     graph_renderer.selection_policy = NodesAndLinkedEdges()
     graph_renderer.inspection_policy = NodesAndLinkedEdges()
 
     return graph_renderer, color_bar
+
 
 def set_node_labels(x, y, syllable):
     """
@@ -1057,23 +1290,27 @@ def set_node_labels(x, y, syllable):
     """
 
     # Get fill colors
-    text_color = 'black'
+    text_color = "black"
 
     # create DataSource for node info
-    label_source = ColumnDataSource({'x': x,
-                                     'y': y,
-                                     'syllable': syllable
-                                     })
+    label_source = ColumnDataSource({"x": x, "y": y, "syllable": syllable})
 
     # create the LabelSet to render
-    labels = LabelSet(x='x', y='y',
-                      x_offset=-7, y_offset=-7,
-                      text='syllable', source=label_source,
-                      text_color=text_color, text_font_size="12px",
-                      background_fill_color=None,
-                      render_mode='canvas')
+    labels = LabelSet(
+        x="x",
+        y="y",
+        x_offset=-7,
+        y_offset=-7,
+        text="syllable",
+        source=label_source,
+        text_color=text_color,
+        text_font_size="12px",
+        background_fill_color=None,
+        render_mode="canvas",
+    )
 
     return labels
+
 
 def get_node_labels(plots, graph_renderer, rendered_graphs, graph, node_indices):
     """
@@ -1100,10 +1337,12 @@ def get_node_labels(plots, graph_renderer, rendered_graphs, graph, node_indices)
             # turn label into string
             syllable = [str(a) for a in syllable]
         else:
-            new_layout = {k: rendered_graphs[0].layout_provider.graph_layout[k] for k in
-                          graph_renderer.layout_provider.graph_layout}
+            new_layout = {
+                k: rendered_graphs[0].layout_provider.graph_layout[k]
+                for k in graph_renderer.layout_provider.graph_layout
+            }
             x, y = zip(*new_layout.values())
-            syllable = [str(a) if a in node_indices else '' for a in new_layout]
+            syllable = [str(a) if a in node_indices else "" for a in new_layout]
     except Exception as e:
         # If the graph has been thresholded such that there are missing syllables, or is empty altogether
         # (with or without thresholding) we remove all the node label coordinates.
@@ -1113,6 +1352,7 @@ def get_node_labels(plots, graph_renderer, rendered_graphs, graph, node_indices)
     labels = set_node_labels(x, y, syllable)
 
     return labels
+
 
 def get_legend_items(plot, edge_width, group_name, difference_graph=False):
     """
@@ -1129,14 +1369,14 @@ def get_legend_items(plot, edge_width, group_name, difference_graph=False):
     info_legend (bokeh Legend instance): Legend containing edge widths corresponding to min and max transition probabilities.
     """
 
-    o_line = plot.line(line_color='orange', line_width=4)
-    p_line = plot.line(line_color='purple', line_width=4)
-    g_line = plot.line(line_color='green', line_width=4)
+    o_line = plot.line(line_color="orange", line_width=4)
+    p_line = plot.line(line_color="purple", line_width=4)
+    g_line = plot.line(line_color="green", line_width=4)
 
     min_tp, max_tp = get_minmax_tp(edge_width, diff=False)
 
-    mink_line = plot.line(line_color='black', line_width=min_tp * 200)
-    maxk_line = plot.line(line_color='black', line_width=max_tp * 200)
+    mink_line = plot.line(line_color="black", line_width=min_tp * 200)
+    maxk_line = plot.line(line_color="black", line_width=max_tp * 200)
 
     group_items = [
         LegendItem(label="Incoming Transition", renderers=[o_line]),
@@ -1150,26 +1390,44 @@ def get_legend_items(plot, edge_width, group_name, difference_graph=False):
     ]
 
     if difference_graph:
-        diff_main_items, info_items = get_difference_legend_items(plot, edge_width, group_name)
+        diff_main_items, info_items = get_difference_legend_items(
+            plot, edge_width, group_name
+        )
         group_items += diff_main_items
 
-    main_legend = Legend(items=group_items,
-                         location='top_left',
-                         border_line_color="black",
-                         background_fill_color='white',
-                         background_fill_alpha=0.7)
+    main_legend = Legend(
+        items=group_items,
+        location="top_left",
+        border_line_color="black",
+        background_fill_color="white",
+        background_fill_alpha=0.7,
+    )
 
-    info_legend = Legend(items=info_items,
-                         location='bottom_left',
-                         border_line_color="black",
-                         background_fill_color='white',
-                         background_fill_alpha=0.7)
+    info_legend = Legend(
+        items=info_items,
+        location="bottom_left",
+        border_line_color="black",
+        background_fill_color="white",
+        background_fill_alpha=0.7,
+    )
 
     return main_legend, info_legend
 
-def plot_interactive_transition_graph(graphs, pos, group, group_names, usages,
-                                      syll_info, incoming_transition_entropy, outgoing_transition_entropy,
-                                      scalars, scalar_color='default', plot_vertically=False, legend_loc='above'):
+
+def plot_interactive_transition_graph(
+    graphs,
+    pos,
+    group,
+    group_names,
+    usages,
+    syll_info,
+    incoming_transition_entropy,
+    outgoing_transition_entropy,
+    scalars,
+    scalar_color="default",
+    plot_vertically=False,
+    legend_loc="above",
+):
     """
     Convert the computed networkx transition graphs to Bokeh glyph objects that can be interacted with and updated throughout run-time.
 
@@ -1184,7 +1442,7 @@ def plot_interactive_transition_graph(graphs, pos, group, group_names, usages,
     """
 
     if plot_vertically:
-        legend_loc = 'right'
+        legend_loc = "right"
 
     rendered_graphs, plots = [], []
 
@@ -1197,10 +1455,20 @@ def plot_interactive_transition_graph(graphs, pos, group, group_names, usages,
 
         # initialize bokeh plot with title and joined panning/zooming coordinates
         if len(plots) == 0:
-            plot = figure(title=f"{group_names[i]}", x_range=(-1.2, 1.2), y_range=(-1.2, 1.2), output_backend="svg")
+            plot = figure(
+                title=f"{group_names[i]}",
+                x_range=(-1.2, 1.2),
+                y_range=(-1.2, 1.2),
+                output_backend="svg",
+            )
         else:
             # Connecting pan-zoom interaction across plots
-            plot = figure(title=f"{group_names[i]}", x_range=plots[0].x_range, y_range=plots[0].y_range, output_backend="svg")
+            plot = figure(
+                title=f"{group_names[i]}",
+                x_range=plots[0].x_range,
+                y_range=plots[0].y_range,
+                output_backend="svg",
+            )
 
         # format the plot and set up the tooltips
         format_plot(plot)
@@ -1208,17 +1476,23 @@ def plot_interactive_transition_graph(graphs, pos, group, group_names, usages,
 
         # compute group stats for each node
         group_scalars = {k: v[i] for k, v in scalars.items()}
-        group_stats = get_trans_graph_group_stats(node_indices, usages[i], group_scalars)
+        group_stats = get_trans_graph_group_stats(
+            node_indices, usages[i], group_scalars
+        )
         # group_stats['incoming_transition_entropy'] = incoming_transition_entropy[i]
         # group_stats['outgoing_transition_entropy'] = outgoing_transition_entropy[i]
 
         # get state neighbor lists for each node
-        group_stats['prev_states'], group_stats['next_states'], group_stats['neighbor_edge_colors'] = \
-            get_neighbors(graph, node_indices, group_names[i])
+        (
+            group_stats["prev_states"],
+            group_stats["next_states"],
+            group_stats["neighbor_edge_colors"],
+        ) = get_neighbors(graph, node_indices, group_names[i])
 
         # format graph edge colors and widths
-        edge_color, edge_width, selected_edge_colors = \
-            format_trans_graph_edges(graph, group_stats['neighbor_edge_colors'], difference_graph)
+        edge_color, edge_width, selected_edge_colors = format_trans_graph_edges(
+            graph, group_stats["neighbor_edge_colors"], difference_graph
+        )
 
         # format graph node colors and sizes
         set_node_colors_and_sizes(graph, usages[i], node_indices, difference_graph)
@@ -1227,25 +1501,34 @@ def plot_interactive_transition_graph(graphs, pos, group, group_names, usages,
         graph_renderer = from_networkx(graph, pos, scale=1, center=(0, 0))
 
         # get syllable info for each node
-        group_stats['labels'], group_stats['descs'], group_stats['cm_paths'] = \
+        group_stats["labels"], group_stats["descs"], group_stats["cm_paths"] = (
             get_group_node_syllable_info(syll_info, node_indices)
+        )
 
         # setup hover tool information
-        graph_renderer = setup_graph_hover_renderers(graph_renderer, group_stats, node_indices)
+        graph_renderer = setup_graph_hover_renderers(
+            graph_renderer, group_stats, node_indices
+        )
 
-        graph_renderer, color_bar = setup_node_and_edge_interactions(graph_renderer, group_stats, scalar_color)
+        graph_renderer, color_bar = setup_node_and_edge_interactions(
+            graph_renderer, group_stats, scalar_color
+        )
 
         # added rendered graph to plot
         plot.renderers.append(graph_renderer)
 
         # get node labels and draw their numbers on each node
-        labels = get_node_labels(plots, graph_renderer, rendered_graphs, graph, node_indices)
+        labels = get_node_labels(
+            plots, graph_renderer, rendered_graphs, graph, node_indices
+        )
 
-        # render labels 
+        # render labels
         plot.renderers.append(labels)
 
         # get plot legends
-        main_legend, info_legend = get_legend_items(plot, edge_width, group_names[i], difference_graph)
+        main_legend, info_legend = get_legend_items(
+            plot, edge_width, group_names[i], difference_graph
+        )
 
         # add legends to plot
         plot.renderers.append(main_legend)
@@ -1273,17 +1556,31 @@ def plot_interactive_transition_graph(graphs, pos, group, group_names, usages,
         formatted_plots = format_graphs(plots, group)
 
     # Create Bokeh grid plot object
-    gp = gridplot(formatted_plots, sizing_mode='scale_both', ncols=ncols, plot_width=plot_width, plot_height=plot_height)
+    gp = gridplot(
+        formatted_plots,
+        sizing_mode="scale_both",
+        ncols=ncols,
+        plot_width=plot_width,
+        plot_height=plot_height,
+    )
     show(gp)
 
-def plot_dendrogram(index_file, model_path, syll_info_path, save_dir, max_syllable = 40, color_by_cluster=False):
+
+def plot_dendrogram(
+    index_file,
+    model_path,
+    syll_info_path,
+    save_dir,
+    max_syllable=40,
+    color_by_cluster=False,
+):
     """plot a static dentrogram
 
     Args:
         index_file (str): path to index file
         model_path (str): path to the model
         syll_info_path (str): path to syll_info
-        save_dir (str): 
+        save_dir (str):
         max_syllable (int, optional): _description_. Defaults to 40.
         color_by_cluster (bool, optional): _description_. Defaults to False.
     """
@@ -1291,7 +1588,7 @@ def plot_dendrogram(index_file, model_path, syll_info_path, save_dir, max_syllab
     if exists(syll_info_path):
         syll_info = read_yaml(syll_info_path)
         syll_info = pd.DataFrame(syll_info).T.sort_index()
-        labels = (syll_info['label']+"-" +syll_info.index.astype(str)).to_numpy()
+        labels = (syll_info["label"] + "-" + syll_info.index.astype(str)).to_numpy()
     else:
         labels = None
 
@@ -1301,20 +1598,31 @@ def plot_dendrogram(index_file, model_path, syll_info_path, save_dir, max_syllab
         color_threshold = None
     else:
         color_threshold = 0
-    
+
     # compute similarity between syllables based on the AR matrix
     sorted_index = get_sorted_index(index_file)
     # X is a (max_syllable, max_syllable) size square matrix
-    X = get_behavioral_distance(sorted_index, model_path, max_syllable=max_syllable, distances='ar[init]')['ar[init]']
+    X = get_behavioral_distance(
+        sorted_index, model_path, max_syllable=max_syllable, distances="ar[init]"
+    )["ar[init]"]
     # need to run squareform on X because linkage expects a 1-d array
-    Z = linkage(squareform(X), 'complete')
+    Z = linkage(squareform(X), "complete")
 
     # plot the dendrogram
-    sns.set_style('whitegrid', {'axes.grid' : False})
-    fig, ax = plt.subplots(figsize=(20, 10)) 
-    dendrogram(Z, distance_sort=False, no_plot=False, labels=labels, color_threshold=color_threshold, leaf_font_size=15, leaf_rotation=90, ax=ax)
+    sns.set_style("whitegrid", {"axes.grid": False})
+    fig, ax = plt.subplots(figsize=(20, 10))
+    dendrogram(
+        Z,
+        distance_sort=False,
+        no_plot=False,
+        labels=labels,
+        color_threshold=color_threshold,
+        leaf_font_size=15,
+        leaf_rotation=90,
+        ax=ax,
+    )
 
     # save the fig
     makedirs(save_dir, exist_ok=True)
-    fig.savefig(join(save_dir, 'syllable_dendrogram.pdf'))
-    fig.savefig(join(save_dir, 'syllable_dendrogram.png'))
+    fig.savefig(join(save_dir, "syllable_dendrogram.pdf"))
+    fig.savefig(join(save_dir, "syllable_dendrogram.png"))

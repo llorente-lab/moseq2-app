@@ -1,6 +1,7 @@
 """
 General utility functions.
 """
+
 import pandas as pd
 import ruamel.yaml as yaml
 from copy import deepcopy
@@ -29,15 +30,11 @@ def read_and_clean_config(config_file):
     """
     config_data = read_yaml(config_file)
     config_data = check_filter_sizes(config_data)
-    config_data['threads'] = max(1, config_data.get('threads', 8))
+    config_data["threads"] = max(1, config_data.get("threads", 8))
 
     # TODO: see if this is necessary
     # set defaults if the keys don't exist
-    config_data = {
-        'bg_roi_erode': (1, 1),
-        'bg_roi_dilate': (1, 1),
-        **config_data
-    }
+    config_data = {"bg_roi_erode": (1, 1), "bg_roi_dilate": (1, 1), **config_data}
 
     return config_data
 
@@ -49,7 +46,7 @@ def write_yaml(data, file):
         data (dict): dictionary of data to be written to yaml
         file (str): string of yaml file name.
     """
-    with open(file, 'w') as yaml_f:
+    with open(file, "w") as yaml_f:
         yaml.safe_dump(data, yaml_f)
 
 
@@ -71,10 +68,14 @@ def merge_labels_with_scalars(sorted_index, model_path):
     # Load scalar Dataframe to compute syllable speeds
     scalar_df = scalars_to_dataframe(sorted_index, model_path=model_path)
 
-    df = compute_behavioral_statistics(scalar_df, count='usage',
-                                       groupby=['group', 'uuid', 'SessionName', 'SubjectName'])
+    df = compute_behavioral_statistics(
+        scalar_df,
+        count="usage",
+        groupby=["group", "uuid", "SessionName", "SubjectName"],
+    )
 
     return df, scalar_df
+
 
 def index_to_dataframe(index_path):
     """
@@ -90,8 +91,8 @@ def index_to_dataframe(index_path):
 
     index_data = read_yaml(index_path)
 
-    files = index_data['files']
-    meta = [f['metadata'] for f in files]
+    files = index_data["files"]
+    meta = [f["metadata"] for f in files]
 
     meta_df = pd.DataFrame(meta)
     tmp_df = pd.DataFrame(files)
@@ -101,24 +102,26 @@ def index_to_dataframe(index_path):
     def apply_filename(n):
         return basename(n[0])
 
-    df['filename'] = df['path'].apply(apply_filename)
+    df["filename"] = df["path"].apply(apply_filename)
 
     return index_data, df
+
 
 class bcolors:
     """
     color UNICODE values used to color printed output.
     """
 
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+    HEADER = "\033[95m"
+    OKBLUE = "\033[94m"
+    OKCYAN = "\033[96m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+
 
 def uuid_lookup(target_uuid, uuid_dict_source):
     """
@@ -126,18 +129,30 @@ def uuid_lookup(target_uuid, uuid_dict_source):
 
     Args:
     target_uuid (str): full or partial uuid the user wants to look up.
-    uuid_dict (dict): dictionary from interactive_scalar_summary widget that has all the session information 
+    uuid_dict (dict): dictionary from interactive_scalar_summary widget that has all the session information
     """
-    
+
     # deep copy the input dictionary
     uuid_dict = deepcopy(uuid_dict_source)
 
     for uuid, info in uuid_dict.items():
         if target_uuid in uuid:
-            print('UUID:', uuid)
+            print("UUID:", uuid)
             # put the path in info['metadata'] for printing
-            info['metadata']['h5Path'], info['metadata']['yamlPath'] = info['path']
-            pprint({k: info['metadata'][k] for k in ['SessionName', 'SubjectName', 'StartTime', 'h5Path', 'yamlPath']})
+            info["metadata"]["h5Path"], info["metadata"]["yamlPath"] = info["path"]
+            pprint(
+                {
+                    k: info["metadata"][k]
+                    for k in [
+                        "SessionName",
+                        "SubjectName",
+                        "StartTime",
+                        "h5Path",
+                        "yamlPath",
+                    ]
+                }
+            )
+
 
 def setup_model_folders(progress_paths):
     """Create model-specific folders
@@ -149,28 +164,29 @@ def setup_model_folders(progress_paths):
     model_dict (dict): dictionary for model specific paths such as model_session_path, model_path, syll_info, syll_info_df and crowd_dir
     """
     # find all the models in the model master path
-    models = glob(join(progress_paths['base_model_path'], '*.p'))
-    
+    models = glob(join(progress_paths["base_model_path"], "*.p"))
+
     # initialize model dictionary
     model_dict = defaultdict(dict)
 
     for model in models:
         model_dir = splitext(model)[0]
-        # get the model file name to use as 
+        # get the model file name to use as
         model = basename(model)
         # Check if the model directory already exists
         if not exists(model_dir):
-            print('Creating model folder for', model)
+            print("Creating model folder for", model)
             # make a model-specific folder
             mkdir(model_dir)
-        
+
         # check if the model is copied to the model-specific folder
         if not exists(join(model_dir, model)):
-            copy2(join(progress_paths['base_model_path'], model), model_dir)
-        
-        model_dict[model]['model_session_path'] = model_dir
-        model_dict[model]['model_path'] = join(model_dir, model)
+            copy2(join(progress_paths["base_model_path"], model), model_dir)
+
+        model_dict[model]["model_session_path"] = model_dir
+        model_dict[model]["model_path"] = join(model_dir, model)
     return dict(model_dict)  # remove defaultdict class
+
 
 def update_model_paths(desired_model, model_dict, progress_filepath):
     """Update relevant model paths in progress.yaml when specific model is chosen
@@ -184,15 +200,37 @@ def update_model_paths(desired_model, model_dict, progress_filepath):
     progress_paths (dict): dictionary of paths in the analysis
     """
 
-    assert desired_model in model_dict, '{} not found in model_dict. Make sure desired_model is one of the keys in model_dict. \nPossible keys: \n{}'.format(desired_model, "\n".join(map(str, model_dict)))
+    assert (
+        desired_model in model_dict
+    ), "{} not found in model_dict. Make sure desired_model is one of the keys in model_dict. \nPossible keys: \n{}".format(
+        desired_model, "\n".join(map(str, model_dict))
+    )
 
     # update model_session_path and model_path
-    for key in ['model_session_path', 'model_path']:
-        progress_paths = update_progress(progress_filepath, key, model_dict[desired_model].get(key))
-    progress_paths = update_progress(progress_filepath, 'plot_path', join(model_dict[desired_model]['model_session_path'], 'plots/'))
-    progress_paths = update_progress(progress_filepath, 'crowd_dir', join(model_dict[desired_model]['model_session_path'], 'crowd_movies/'))
-    progress_paths = update_progress(progress_filepath, 'syll_info', join(model_dict[desired_model]['model_session_path'], 'syll_info.yaml'))
-    progress_paths = update_progress(progress_filepath, 'df_info_path', join(model_dict[desired_model]['model_session_path'], 'syll_df.parquet'))
+    for key in ["model_session_path", "model_path"]:
+        progress_paths = update_progress(
+            progress_filepath, key, model_dict[desired_model].get(key)
+        )
+    progress_paths = update_progress(
+        progress_filepath,
+        "plot_path",
+        join(model_dict[desired_model]["model_session_path"], "plots/"),
+    )
+    progress_paths = update_progress(
+        progress_filepath,
+        "crowd_dir",
+        join(model_dict[desired_model]["model_session_path"], "crowd_movies/"),
+    )
+    progress_paths = update_progress(
+        progress_filepath,
+        "syll_info",
+        join(model_dict[desired_model]["model_session_path"], "syll_info.yaml"),
+    )
+    progress_paths = update_progress(
+        progress_filepath,
+        "df_info_path",
+        join(model_dict[desired_model]["model_session_path"], "syll_df.parquet"),
+    )
 
     return progress_paths
 
@@ -208,5 +246,5 @@ def update_config(path: str) -> dict:
     try:
         yield config
     finally:
-        with open(path, 'w') as config_path:
+        with open(path, "w") as config_path:
             yaml.safe_dump(config, config_path)
