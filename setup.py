@@ -62,8 +62,8 @@ setup(
         "full": [
             "moseq2-extract @ git+https://github.com/llorente-lab/moseq2-extract@release",
             "moseq2-pca @ git+https://github.com/dattalab/moseq2-pca.git@release",
-            "moseq2-model @ git+https://github.com/dattalab/moseq2-model.git@release",
-            "moseq2-viz @ git+https://github.com/dattalab/moseq2-viz.git@release",
+            "moseq2-model @ git+https://github.com/athp18/moseq2-model",
+            "moseq2-viz @ git+https://github.com/dattalab/moseq2-viz",
         ]
     },
     python_requires=">=3.7,<3.8",
