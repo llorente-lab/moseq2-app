@@ -350,6 +350,71 @@ def generate_intital_progressfile(filename='progress.yaml'):
 
     return base_progress_vars
 
+_PROGRESS_PATH_KEYS = frozenset({
+    'base_dir', 'config_file', 'session_config', 'index_file',
+    'train_data_dir', 'pca_dirname', 'scores_path', 'changepoints_path',
+    'model_path', 'crowd_dir', 'syll_info', 'plot_path',
+    'model_session_path', 'base_model_path',
+})
+
+_INDEX_PATH_KEYS = frozenset({'pca_path'})
+
+_CONFIG_PATH_KEYS = frozenset({
+    'pca_file', 'pca_file_scores', 'changepoint_file', 'output_dir',
+})
+
+
+def _rewrite_path(value, old_base, new_base):
+    if isinstance(value, str) and value.startswith(old_base):
+        return new_base + value[len(old_base):]
+    return value
+
+
+def _relocate_project(progress_file, old_base, new_base):
+    """
+    Rewrite all known path fields across progress.yaml, moseq2-index.yaml,
+    and config.yaml when a project has moved from old_base to new_base.
+    Uses a per-file whitelist of path keys — non-path values are never touched.
+    """
+    yml = yaml.YAML()
+    yml.preserve_quotes = True
+    project_dir = dirname(abspath(progress_file))
+
+    # progress.yaml
+    with open(progress_file) as f:
+        data = yml.load(f)
+    for k in _PROGRESS_PATH_KEYS:
+        if k in data:
+            data[k] = _rewrite_path(data[k], old_base, new_base)
+    with open(progress_file, 'w') as f:
+        yml.dump(data, f)
+
+    # moseq2-index.yaml
+    index_file = join(project_dir, 'moseq2-index.yaml')
+    if exists(index_file):
+        with open(index_file) as f:
+            data = yml.load(f)
+        for entry in data.get('files', []):
+            if 'path' in entry:
+                entry['path'] = [_rewrite_path(p, old_base, new_base) for p in entry['path']]
+        for k in _INDEX_PATH_KEYS:
+            if k in data:
+                data[k] = _rewrite_path(data[k], old_base, new_base)
+        with open(index_file, 'w') as f:
+            yml.dump(data, f)
+
+    # config.yaml
+    config_file = join(project_dir, 'config.yaml')
+    if exists(config_file):
+        with open(config_file) as f:
+            data = yml.load(f)
+        for k in _CONFIG_PATH_KEYS:
+            if k in data:
+                data[k] = _rewrite_path(data[k], old_base, new_base)
+        with open(config_file, 'w') as f:
+            yml.dump(data, f)
+
+
 def load_progress(progress_file):
     """
     Load progress file variables
@@ -361,13 +426,21 @@ def load_progress(progress_file):
     progress_vars (dict): dictionary of loaded progress variables
     """
 
-    if exists(progress_file):
-        print('Updating notebook variables...')
-        progress_vars = read_yaml(progress_file)
-    else:
+    if not exists(progress_file):
         print('Progress file not found. To generate a new one, set restore_progress_vars(progress_file, init=True)')
-        progress_vars = None
+        return None
 
+    progress_vars = read_yaml(progress_file)
+
+    actual_base = abspath(dirname(abspath(progress_file)))
+    stored_base = progress_vars.get('base_dir', '')
+    if stored_base and actual_base != stored_base:
+        print(f'Project directory has moved:\n  was: {stored_base}\n  now: {actual_base}')
+        print('Auto-updating paths...')
+        _relocate_project(progress_file, stored_base, actual_base)
+        progress_vars = read_yaml(progress_file)
+
+    print('Updating notebook variables...')
     return progress_vars
 
 def restore_progress_vars(progress_file=abspath('./progress.yaml'), init=False, overwrite=False):
