@@ -143,6 +143,15 @@ def get_session_paths(data_dir, extracted=False, flipped=False, exts=['dat', 'mk
             files = [f for f in files if f"ir.{ext}" != f and "depth" in f]
         sessions += files
 
+    # Also include sessions that have a proc/ folder and metadata.json but no raw depth video.
+    if not extracted:
+        sessions_with_raw = {basename(dirname(s)) for s in sessions}
+        for meta_file in sorted(glob(join(data_dir, '*/metadata.json'))):
+            sess_dir = dirname(meta_file)
+            sess_name = basename(sess_dir)
+            if sess_name not in sessions_with_raw and exists(join(sess_dir, 'proc')):
+                sessions.append(meta_file)
+
     if len(sessions) == 0:
         if extracted:
             sessions = sorted(glob(join(data_dir, '*.mp4')))
