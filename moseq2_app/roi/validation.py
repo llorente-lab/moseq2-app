@@ -56,7 +56,7 @@ def count_nan_rows(scalar_df):
     n_missing_frames (int): Number of frames with NaN computed scalar values.
     """
 
-    return scalar_df.isnull().any(1).sum()
+    return scalar_df.isnull().any(axis=1).sum()
 
 
 def count_missing_mouse_frames(scalar_df):
