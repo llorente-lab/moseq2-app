@@ -1273,7 +1273,7 @@ def plot_interactive_transition_graph(graphs, pos, group, group_names, usages,
         formatted_plots = format_graphs(plots, group)
 
     # Create Bokeh grid plot object
-    gp = gridplot(formatted_plots, sizing_mode='scale_both', ncols=ncols, plot_width=plot_width, plot_height=plot_height)
+    gp = gridplot(formatted_plots, sizing_mode='scale_both', ncols=ncols, width=plot_width, height=plot_height)
     show(gp)
 
 def plot_dendrogram(index_file, model_path, syll_info_path, save_dir, max_syllable = 40, color_by_cluster=False):

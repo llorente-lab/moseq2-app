@@ -272,7 +272,7 @@ class SyllableLabeler(SyllableLabelerWidgets):
                     """
 
         # Create embedded HTML Div and view layout
-        div = Div(text=video_div, style={'width': '100%'})
+        div = Div(text=video_div, styles={'width': '100%'})
 
         slider = Slider(start=0, end=2, value=1, step=0.1, width=video_dims[0]-50,
                         format="0[.]00", title=f"Playback Speed")
