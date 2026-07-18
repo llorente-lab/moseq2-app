@@ -1070,8 +1070,7 @@ def set_node_labels(x, y, syllable):
                       x_offset=-7, y_offset=-7,
                       text='syllable', source=label_source,
                       text_color=text_color, text_font_size="12px",
-                      background_fill_color=None,
-                      render_mode='canvas')
+                      background_fill_color=None)
 
     return labels
 
