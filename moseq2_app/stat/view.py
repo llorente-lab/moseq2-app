@@ -209,7 +209,7 @@ def get_aux_stat_dfs(df, group, sorting, groupby='group', errorbar='CI 95%', sta
     grouped = df_group.groupby('syllable')[[stat]]
 
     # Get resorted mean syllable data
-    aux_df = df_group.groupby('syllable', as_index=False).mean().reindex(sorting)
+    aux_df = df_group.groupby('syllable', as_index=False).mean(numeric_only=True).reindex(sorting)
 
     # Get SEM
     if errorbar == 'CI 95%':
@@ -222,7 +222,7 @@ def get_aux_stat_dfs(df, group, sorting, groupby='group', errorbar='CI 95%', sta
         aux_err = df_group.groupby('syllable', as_index=False).sem().reindex(sorting)
     else:
         stat_err = grouped.std().reindex(sorting)
-        aux_err = df_group.groupby('syllable', as_index=False).std().reindex(sorting)
+        aux_err = df_group.groupby('syllable', as_index=False).std(numeric_only=True).reindex(sorting)
 
     # Get min and max error bar values
     if errorbar == 'CI 95%':
@@ -258,7 +258,7 @@ def get_syllable_info(df, sorting):
 
     # Get Labeled Syllable Information
     info_columns = ['syllable', 'label', 'desc', 'crowd_movie_path']
-    desc_data = df.groupby(info_columns, as_index=False).mean()[info_columns].reindex(sorting)
+    desc_data = df.groupby(info_columns, as_index=False).mean(numeric_only=True)[info_columns].reindex(sorting)
 
     # Pack data into numpy arrays
     labels = desc_data['label'].to_numpy()
@@ -484,7 +484,7 @@ def format_stat_plot(p, df, searchbox, slider, sorting):
     """
 
     # Get xtick labels
-    label_df = df.groupby(['syllable', 'label'], as_index=False).mean().reindex(sorting)
+    label_df = df.groupby(['syllable', 'label'], as_index=False).mean(numeric_only=True).reindex(sorting)
 
     xtick_numbers = list(label_df['syllable'])
     xtick_labels = list(label_df['label'])

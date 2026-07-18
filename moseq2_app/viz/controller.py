@@ -192,7 +192,7 @@ class SyllableLabeler(SyllableLabelerWidgets):
         self.groups = df.group.unique()
 
         # Get grouped DataFrame
-        group_df = df.groupby(['group', 'syllable'], as_index=False).mean()
+        group_df = df.groupby(['group', 'syllable'], as_index=False).mean(numeric_only=True)
 
         # Get self.group_info
         self.get_mean_group_dict(group_df)
@@ -543,13 +543,13 @@ class CrowdMovieComparison(CrowdMovieCompareWidgets):
             self.df['SessionName'] = self.df['SessionName'].astype(str)
 
         # Get grouped DataFrame
-        self.session_df = df.groupby(['SessionName', 'syllable'], as_index=False).mean()
-        self.subject_df = df.groupby(['SubjectName', 'syllable'], as_index=False).mean()
+        self.session_df = df.groupby(['SessionName', 'syllable'], as_index=False).mean(numeric_only=True)
+        self.subject_df = df.groupby(['SubjectName', 'syllable'], as_index=False).mean(numeric_only=True)
 
         self.groups = list(df.group.unique())
 
         # Get group DataFrame
-        self.group_df = df.groupby(['group', 'syllable'], as_index=False).mean()
+        self.group_df = df.groupby(['group', 'syllable'], as_index=False).mean(numeric_only=True)
 
         self.get_mean_group_dict(self.group_df)
 
