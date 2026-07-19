@@ -308,7 +308,7 @@ def find_progress(base_progress):
             base_progress['crowd_dir'] = join(dirname(models[0]), 'crowd_movies/')
     return base_progress
 
-def generate_intital_progressfile(filename='progress.yaml'):
+def generate_initial_progressfile(filename='progress.yaml'):
     """
     Generate a progress YAML file with the scanned parameter paths.
 
